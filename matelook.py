@@ -3,26 +3,53 @@
 from flask import Flask, session, escape, request, url_for, redirect, render_template
 from collections import defaultdict
 import re, sys, os, glob
+import sqlite3 as sql
 app = Flask( __name__ )
 
-users_dir = "static/dataset-medium"
+users_dir = "static/dataset-large"
+db = "sql.db"
+con = None
+#
 
 @app.route( '/', methods=['GET', 'POST'] )
 def index( ):
     if request.method == 'POST':
-        session['username'] = request.form['username']
-        return redirect(url_for('index'))
+        formUser = request.form[ 'username' ]             # Store username from form
+        formPass = request.form[ 'password' ]
+
+        formUser = re.findall( r'z[0-9]{7}', formUser )   # Only find zID.
+        if not formUser:
+            return "Please enter your zID in the form: z5555555."
+        if not formPass:
+            return "Please enter a password."
+
+        con = sql.connect( db )
+        cur = con.cursor( )
+        query = "SELECT password FROM User WHERE zID = \"{}\"".format( formUser[ 0 ] )
+        cur.execute( query )
+        con.commit( )
+        tmpPass = cur.fetchone( )
+        if not tmpPass:
+            return "The user {} does not exist".format( formUser )
+        else:
+            print( "[{}]\n\tForm: {}\n\tActual: {}".format( formUser, formPass, tmpPass[ 0 ] ) )
+            if tmpPass[ 0 ] == formPass:
+                session[ 'username' ] = formUser
+                return redirect( url_for( 'index' ) )
+            else:
+                return "Incorrect password."
 
     if 'username' in session:
-        return """ \
+        return ''' \
         <h2>Logged in as %s</h2>
         <a href="logout"><button>Logout</button></a>
-        """ % escape( session[ 'username'] )
+        ''' % escape( session[ 'username'] )
     else:
         return '''
             <form action="" method="post">
                 <label>Username</label>
                 <p><input type=text name=username>
+                <p><input type=password name=password>
                 <p><input type=submit value=Login>
             </form>
         '''
@@ -52,13 +79,8 @@ def viewUser( user_name=None ):
 
             if lineInfo[ 0 ] == "mates":
                 lineInfo[ 1 ] = re.sub( r'(\[|\])', '', lineInfo[ 1 ] )
-                # mates = re.findall( r'\s*([^\s]*),*\s*', lineInfo[ 1 ] )
                 mates = lineInfo[ 1 ].split( ', ' )
                 mates.pop( )    # Remove last useless element
-                # print( mates )
-                # print( type( mates ) )
-                # for person in iter( mates ):
-                    # print( "Person: " + person )
 
                 u_Info[ lineInfo[ 0 ] ] = mates
             else:
@@ -68,16 +90,9 @@ def viewUser( user_name=None ):
     imgLoc = os.path.join( u_ToShow, "profile.jpg" )
     if not os.path.isfile( imgLoc ):
         imgLoc = None
-        #imgLoc = url_for( 'static', filename='imgLoc' )
-    # else:
-        #imgLoc = url_for( 'static', filename='imgLoc' )
+
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
-#     return """
-# <div class="matelook_user_details">
-# %s
-# </div>
-# """ % ( u_Info )
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -93,7 +108,59 @@ def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'index' ) )
 
+app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'
+
+
+def main( ):
+    global con
+    if os.path.isfile( db ): return
+    # We don't need to recreate the database if it already exists.
+
+    print( "Creating Database..." )
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( '''\
+    CREATE TABLE IF NOT EXISTS "User"
+        ("zID" TEXT PRIMARY KEY  NOT NULL  UNIQUE ,
+        "full_name" TEXT,
+        "email" TEXT,
+        "password" TEXT,
+        "birthday" TEXT,
+        "home_suburb" TEXT )''' )
+    cur.execute('SELECT SQLITE_VERSION()')
+    data = cur.fetchone()
+    print( "SQLite version: %s" % data )
+
+    con.close( )
+    parseDataset( )
+
+def parseDataset( ):
+    users = sorted( glob.glob( os.path.join( users_dir, "*" ) ) )
+    con = sql.connect( db )
+    for user in users:
+        print( "User: " + user )
+        u_FileName = os.path.join( user, "user.txt" )
+        u_Info = defaultdict( lambda: None )
+        with open( u_FileName ) as f:
+            for line in f:
+                line = line.rstrip( )   # Chomp
+                lineInfo = line.split( "=", 1 ) # Split on '='
+                if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
+
+                if lineInfo[ 0 ] == "mates" or lineInfo[ 0 ] == "courses" or lineInfo[ 0 ] == "programs": continue
+                u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
+
+        cur = con.cursor( )
+        query = "INSERT INTO {} VALUES(\"{}\",\"{}\",\"{}\",\"{}\",\"{}\", \"{}\");".format( "User",     \
+                u_Info[ "zid"], u_Info[ "full_name" ], u_Info[ "email" ], u_Info[ "password" ], \
+                u_Info[ "birthday" ], u_Info[ "home_suburb" ] )
+        print( "Query: " + query )
+        cur.execute( query )
+
+    con.commit( )
+    con.close( )
+
+main( )
+
 if __name__ == "__main__":
     app.run( debug=True, port=5000, host="0.0.0.0" )
-
-app.secret_key = 'yoloswag420'
