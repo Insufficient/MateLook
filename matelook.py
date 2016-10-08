@@ -16,7 +16,7 @@ def index( ):
     if 'username' in session:
         return """ \
         <h2>Logged in as %s</h2>
-        <a href="/logout"><button>Logout</button></a>
+        <a href="logout"><button>Logout</button></a>
         """ % escape( session[ 'username'] )
     else:
         return '''
@@ -41,7 +41,7 @@ def viewUser( user_name=None ):
     u_FileName = os.path.join( u_ToShow, "user.txt" )
 
     if not os.path.isfile( u_FileName ):
-        return "<p>Invalid username %s</p>" % escape( user_name )
+        return "<p>User does not exist.%s</p>" % escape( user_name )
 
     with open( u_FileName ) as f:
         u_Info = defaultdict( )
