@@ -39,6 +39,7 @@ def index( ):
                 return redirect( url_for( 'index' ) )
             else:
                 return render_template( "error.html", message="Incorrect password." )
+        return render_template( "error.html", message="Invalid error!" )
 
     if 'username' in session:
         return ''' \
