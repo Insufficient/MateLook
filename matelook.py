@@ -40,8 +40,7 @@ def index( ):
             else:
                 return render_template( "error.html", message="Incorrect password." )
         return render_template( "error.html", message="Invalid error!" )
-
-    if 'username' in session:
+    elif 'username' in session:
         return ''' \
         <h2>Logged in as %s</h2>
         <a href="logout"><button>Logout</button></a>
