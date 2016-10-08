@@ -5,7 +5,7 @@ from collections import defaultdict
 import re, sys, os, glob
 app = Flask( __name__ )
 
-users_dir = "static\dataset-medium"
+users_dir = "static/dataset-medium"
 
 @app.route( '/', methods=['GET', 'POST'] )
 def index( ):
