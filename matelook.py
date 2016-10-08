@@ -19,9 +19,10 @@ def index( ):
 
         formUser = re.findall( r'z[0-9]{7}', formUser )   # Only find zID.
         if not formUser:
-            return "Please enter your zID in the form: z5555555."
+            return render_template( "error.html", message="Please enter your zID in the form: z5555555." )
+            #return "Please enter your zID in the form: z5555555."
         if not formPass:
-            return "Please enter a password."
+            return render_template( "error.html", message="Please enter a password." )
 
         con = sql.connect( db )
         cur = con.cursor( )
@@ -30,14 +31,14 @@ def index( ):
         con.commit( )
         tmpPass = cur.fetchone( )
         if not tmpPass:
-            return "The user {} does not exist".format( formUser )
+            return render_template( "error.html", message="The user does not exist" );
         else:
             print( "[{}]\n\tForm: {}\n\tActual: {}".format( formUser, formPass, tmpPass[ 0 ] ) )
             if tmpPass[ 0 ] == formPass:
-                session[ 'username' ] = formUser
+                session[ 'username' ] = formUser[ 0 ]
                 return redirect( url_for( 'index' ) )
             else:
-                return "Incorrect password."
+                return render_template( "error.html", message="Incorrect password." )
 
     if 'username' in session:
         return ''' \
