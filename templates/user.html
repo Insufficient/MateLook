@@ -1,16 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>MateLook {{ username }}</title>
-</head>
+{% include 'header.html' %}
 <body>
     {% if uInfo["full_name"] %}
         <h1>Name: {{ uInfo["full_name"] }}</h1>
     {% endif %}
 
     {% if img %}
-        <img src="../{{ img }}" />
+        <img class="profile_picture" src="../{{ img }}" />
     {% endif %}
 
     {% if uInfo["email"] %}
@@ -20,7 +15,10 @@
     {% if uInfo["mates"] %}
         <h2>Mates:</h2>
         {% for mate in uInfo["mates"] %}
-            <li><a href="{{mate}}">{{ mate }}</a></li>
+            <li>
+                <a href="{{mate}}">{{ mate }}</a>
+                <img class="mate_picture" src="../{{ img }}/../../{{ mate }}/profile.jpg" />
+            </li>
         {% endfor %}
     {% endif %}
 

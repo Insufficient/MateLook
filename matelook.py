@@ -33,7 +33,6 @@ def index( ):
         if not tmpPass:
             return render_template( "error.html", message="The user does not exist" );
         else:
-            print( "[{}]\n\tForm: {}\n\tActual: {}".format( formUser, formPass, tmpPass[ 0 ] ) )
             if tmpPass[ 0 ] == formPass:
                 session[ 'username' ] = formUser[ 0 ]
                 return redirect( url_for( 'index' ) )
@@ -117,7 +116,7 @@ def main( ):
     if os.path.isfile( db ): return
     # We don't need to recreate the database if it already exists.
 
-    print( "Creating Database..." )
+    # print( "Creating Database..." )
     con = sql.connect( db )
     cur = con.cursor( )
     cur.execute( '''\
@@ -128,9 +127,7 @@ def main( ):
         "password" TEXT,
         "birthday" TEXT,
         "home_suburb" TEXT )''' )
-    cur.execute('SELECT SQLITE_VERSION()')
-    data = cur.fetchone()
-    print( "SQLite version: %s" % data )
+    con.commit( );
 
     con.close( )
     parseDataset( )
