@@ -136,7 +136,7 @@ def parseDataset( ):
     users = sorted( glob.glob( os.path.join( users_dir, "*" ) ) )
     con = sql.connect( db )
     for user in users:
-        print( "User: " + user )
+        # print( "User: " + user )
         u_FileName = os.path.join( user, "user.txt" )
         u_Info = defaultdict( lambda: None )
         with open( u_FileName ) as f:
@@ -152,7 +152,7 @@ def parseDataset( ):
         query = "INSERT INTO {} VALUES(\"{}\",\"{}\",\"{}\",\"{}\",\"{}\", \"{}\");".format( "User",     \
                 u_Info[ "zid"], u_Info[ "full_name" ], u_Info[ "email" ], u_Info[ "password" ], \
                 u_Info[ "birthday" ], u_Info[ "home_suburb" ] )
-        print( "Query: " + query )
+        # print( "Query: " + query )
         cur.execute( query )
 
     con.commit( )
