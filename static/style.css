@@ -8,9 +8,9 @@
  * You will probably want to add  CSS to this file too
  */
 
-.profile_picture {
-    height: 250px;
-    width: 250px;
+.profile-picture, .mate-picture {
+    height: 125px;
+    width: 125px;
     border-radius: 50%;
     max-width: 100%;
 }

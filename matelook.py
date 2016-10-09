@@ -94,6 +94,33 @@ def viewUser( user_name=None ):
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
 
+@app.route( '/users/<user_name>' )
+def viewUsers( user_name=None ):
+
+    if( user_name == None ):     # Show a random user.
+        return render_template( "error.html", message="Please enter a username" )
+
+    username = re.findall( r'z[0-9]{7}', user_name )    # Sanitize input
+    if not username:                                    # No user with the username found
+        return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
+
+    u_Info = tuple( )
+    if username[ 0 ] == getInfo( username[ 0 ], 'zID' ): # User exists
+        con = sql.connect( db )
+        con.row_factory = sql.Row
+        cur = con.cursor( )
+        cur.execute( "SELECT * FROM User WHERE zID=?", [ username[ 0 ] ] )
+        result = cur.fetchone( )
+        u_Info = result
+        # print( "Result: " + str( result ) )
+        con.close( )
+    else:
+        return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
+
+
+    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info )
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -108,10 +135,42 @@ def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'index' ) )
 
+@app.route( '/profile_picture/<zID>' )
+def showProfPict( zID ):
+    username = re.findall( r'z[0-9]{7}', zID )    # Sanitize input
+    if not username:                                    # No user with the username found
+        return "<p>Invalid username %s</p>" % escape( zID )
+
+    u_ToShow = os.path.join( users_dir, username[ 0 ] )
+    imgLoc = os.path.join( u_ToShow, "profile.jpg" )
+    if not os.path.isfile( imgLoc ):
+        imgLoc = "http://placehold.it/250x250" # Change this to something sensible like a default picture.
+    return redirect( imgLoc )
+
 app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'
 
+def getSess( ):
+    if 'username' in session:
+        return session[ 'username' ]
+    else:
+        return None
+
+def getInfo( zID, infoName="*" ):
+    con = sql.connect( db )
+    cur = con.cursor( )
+    #query = "SELECT ? FROM User WHERE zID = \"{}\"".format( zID )
+    cur.execute( "SELECT {} FROM User WHERE zID = ?".format( infoName ), (zID, ) )
+    con.commit( )
+    result = cur.fetchone( )
+    con.close( )
+    return result[ 0 ]
 
 def main( ):
+
+    # Make getInfo callable from Jinja.
+    app.jinja_env.globals.update( getInfo=getInfo )
+    app.jinja_env.globals.update( getSess=getSess )
+
     global con
     if os.path.isfile( db ): return
     # We don't need to recreate the database if it already exists.
@@ -162,3 +221,46 @@ main( )
 
 if __name__ == "__main__":
     app.run( debug=True, port=5000, host="0.0.0.0" )
+
+
+# OLD CODE
+
+@app.route( '/user/<user_name>' )
+def viewUser( user_name=None ):
+
+    if( user_name == None ):     # Show a random user.
+        return "<p>Please enter a username</p>"
+
+    username = re.findall( r'z[0-9]{7}', user_name )    # Sanitize input
+    if not username:                                    # No user with the username found
+        return "<p>Invalid username %s</p>" % escape( user_name )
+
+    u_ToShow = os.path.join( users_dir, username[ 0 ] )
+    u_FileName = os.path.join( u_ToShow, "user.txt" )
+
+    if not os.path.isfile( u_FileName ):
+        return "<p>User does not exist.%s</p>" % escape( user_name )
+
+    with open( u_FileName ) as f:
+        u_Info = defaultdict( )
+        for line in f:
+            line = line.rstrip( )   # Chomp
+            lineInfo = line.split( "=", 1 ) # Split on '='
+            if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
+
+            if lineInfo[ 0 ] == "mates":
+                lineInfo[ 1 ] = re.sub( r'(\[|\])', '', lineInfo[ 1 ] )
+                mates = lineInfo[ 1 ].split( ', ' )
+                mates.pop( )    # Remove last useless element
+
+                u_Info[ lineInfo[ 0 ] ] = mates
+            else:
+                u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
+
+    #print( u_Info );
+    imgLoc = os.path.join( u_ToShow, "profile.jpg" )
+    if not os.path.isfile( imgLoc ):
+        imgLoc = None
+
+
+    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
