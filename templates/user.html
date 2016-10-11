@@ -20,6 +20,53 @@
             </li>
         {% endfor %}
     {% endif %}
+
+    <!-- <section class="posts">
+    {% for post in pInfo %}
+        {% set rowInfo = dictFromRow( post ) %}
+        <h3>From: {{ rowInfo.zID }}</h3>
+        <h4>Message: {{ rowInfo.message|doMention|safe }}</h4>
+    {% endfor %}
+    </section> -->
+
+    <h1>Mates</h1>
+    {% for mate in mInfo %}
+    {% set rowInfo = dictFromRow( mate ) %}
+    <li class="mate">
+        <a href="{{ rowInfo.mateID }}" class="mate-name">{{ getInfo( rowInfo.mateID, "full_name" ) }}</a>
+        <!-- <img class="mate_picture" src="../{{ img }}/../../{{ mate }}/profile.jpg" /> -->
+        <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
+    </li>
+    {% endfor %}
+
+    <section class="ui raised very padded text container segment">
+        <div class="ui comments">
+            <h2 class="ui dividing header">Posts</h2>
+            {% for post in pInfo %}
+            {% set rowInfo = dictFromRow( post ) %}
+            <div class="comment">
+                <a class="avatar">
+                    <img src="../profile_picture/{{ username }}" />
+                </a>
+                <div class="content">
+                    <a class="author">{{ rowInfo.zID }}</a>
+                    <div class="metadata">
+                        <span class="date">{{ rowInfo.time}}</span>
+                    </div>
+                    <div class="text">
+                        {{ rowInfo.message|doMention|safe }}
+                    </div>
+                    <div class="actions">
+                        <a class="reply">Reply</a>
+                        <a class="action-edit">Edit</a>
+                        <a class="action-delete">Erase</a>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+    </section>
+
     {% if username == getSess( ) %}
         {% if uInfo.courses %}
             <p>Courses: {{ uInfo.courses }}</p>
@@ -29,5 +76,6 @@
         {% endif %}
     {% endif %}
     <textarea>{{ uInfo|string }}</textarea>
+    <textarea>{{ pInfo|string }}</textarea>
 </body>
 </html>

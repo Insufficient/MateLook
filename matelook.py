@@ -1,8 +1,8 @@
 #!/usr/local/bin/python3.5 -u
 
-from flask import Flask, session, escape, request, url_for, redirect, render_template
+from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup
 from collections import defaultdict
-import re, sys, os, glob
+import re, sys, os, glob, jinja2
 import sqlite3 as sql
 app = Flask( __name__ )
 
@@ -53,6 +53,11 @@ def index( ):
                 <p><input type=submit value=Login>
             </form>
         '''
+
+@app.route( '/test' )
+def testView( ):
+    return render_template( "error0.html", message="""#YOLOMAN. LOL LLOL OLLOOL OLOL
+    @z5117924\n\n<script>alert(\"LOL\")</script>""" )
 
 @app.route( '/user/<user_name>' )
 def viewUser( user_name=None ):
@@ -105,6 +110,9 @@ def viewUsers( user_name=None ):
         return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
 
     u_Info = tuple( )
+    p_Info = tuple( )
+    m_Info = tuple( )
+    c_Info = tuple( )
     if username[ 0 ] == getInfo( username[ 0 ], 'zID' ): # User exists
         con = sql.connect( db )
         con.row_factory = sql.Row
@@ -112,15 +120,25 @@ def viewUsers( user_name=None ):
         cur.execute( "SELECT * FROM User WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchone( )
         u_Info = result
-        # print( "Result: " + str( result ) )
+        cur = con.cursor( )
+        cur.execute( "SELECT * FROM Post WHERE zID=? ORDER BY time DESC", [ username[ 0 ] ] )
+        result = cur.fetchall( )
+        p_Info = result
+        cur = con.cursor( )
+        cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ username[ 0 ] ] )
+        result = cur.fetchall( )
+        m_Info = result
+        cur = con.cursor( )
+        cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ username[ 0 ] ] )
+        result = cur.fetchall( )
+        c_Info = result
+
         con.close( )
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
 
 
-    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info )
-
-
+    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -165,11 +183,23 @@ def getInfo( zID, infoName="*" ):
     con.close( )
     return result[ 0 ]
 
+def doMention( longString ):
+    longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', str( jinja2.escape( longString ) ) )
+    longString = re.sub( r'\\n', r'<br/>', longString )
+    return Markup( longString )
+
+# Credits to bbengfort from StackOverflow.
+def dictFromRow( row ):
+    return dict( zip( row.keys( ), row ) )
+
 def main( ):
 
     # Make getInfo callable from Jinja.
     app.jinja_env.globals.update( getInfo=getInfo )
     app.jinja_env.globals.update( getSess=getSess )
+    app.jinja_env.globals.update( dictFromRow=dictFromRow )
+    app.jinja_env.filters['doMention'] = doMention
+
 
     global con
     if os.path.isfile( db ): return
@@ -186,6 +216,15 @@ def main( ):
         "password" TEXT,
         "birthday" TEXT,
         "home_suburb" TEXT )''' )
+    cur.execute( ''' \
+    CREATE TABLE "Post" ("pID" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE  DEFAULT 0,
+    "zID" TEXT,
+    "message" TEXT,
+    "time" TEXT,
+    "longitude" TEXT,
+    "latitude" TEXT)''' )
+    cur.execute( '''CREATE TABLE "Mate" ("zID" TEXT NOT NULL , "mateID" TEXT)''' )
+    cur.execute( '''CREATE TABLE "Course" ("zID" TEXT NOT NULL , "courseID" TEXT)''' )
     con.commit( );
 
     con.close( )
@@ -195,24 +234,62 @@ def parseDataset( ):
     users = sorted( glob.glob( os.path.join( users_dir, "*" ) ) )
     con = sql.connect( db )
     for user in users:
-        # print( "User: " + user )
-        u_FileName = os.path.join( user, "user.txt" )
+        """
+            Read user information from user.txt
+        """
+        u_FileDetails = os.path.join( user, "user.txt" )
         u_Info = defaultdict( lambda: None )
-        with open( u_FileName ) as f:
+        uID = re.findall( r'z[0-9]{7}', user )
+        with open( u_FileDetails ) as f:
             for line in f:
                 line = line.rstrip( )   # Chomp
                 lineInfo = line.split( "=", 1 ) # Split on '='
                 if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
 
-                if lineInfo[ 0 ] == "mates" or lineInfo[ 0 ] == "courses" or lineInfo[ 0 ] == "programs": continue
+                if lineInfo[ 0 ] == "mates" or lineInfo[ 0 ] == "courses":            # Special case for parsing mates/courses
+                    lineInfo[ 1 ] = re.sub( r'(\[|\])', '', lineInfo[ 1 ] )
+                    infoList = lineInfo[ 1 ].split( ', ' )
+                    infoList.pop( )    # Remove last useless element
+
+                    if lineInfo[ 0 ] == "mates":
+                        for mate in infoList:  # Loop through the mates of each user
+                            cur = con.cursor( )
+                            cur.execute( "INSERT INTO Mate VALUES( ?, ? )", ( uID[ 0 ], mate ) )
+                    else:
+                        for course in infoList:
+                            cur = con.cursor( )
+                            cur.execute( "INSERT INTO Course VALUES( ?, ? )", ( uID[ 0 ], course ) )
+
                 u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
 
         cur = con.cursor( )
         query = "INSERT INTO {} VALUES(\"{}\",\"{}\",\"{}\",\"{}\",\"{}\", \"{}\");".format( "User",     \
                 u_Info[ "zid"], u_Info[ "full_name" ], u_Info[ "email" ], u_Info[ "password" ], \
                 u_Info[ "birthday" ], u_Info[ "home_suburb" ] )
-        # print( "Query: " + query )
         cur.execute( query )
+
+        """
+            Read posts/comments/replies
+            ( zID, message, time, from, longitude, latitude )
+        """
+        # postDir = os.path.join( user, "posts" )
+        # print( "PostDir: " + postDir )
+        posts = sorted( glob.glob( os.path.join( user, "posts", "*" ) ) )
+        for post in posts:
+            p_Info = defaultdict( lambda: None )
+            u_PostDetails = os.path.join( post, "post.txt" )
+            with open( u_PostDetails, encoding="UTF-8", errors="ignore") as p:
+                for line in p:
+                    line = line.rstrip( )   # Chomp
+                    lineInfo = line.split( "=", 1 ) # Split on '='
+                    if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
+
+                    p_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
+
+            cur = con.cursor( )
+            cur.execute( "INSERT INTO Post VALUES( ?, ?, ?, ?, ?, ? )", (    \
+                None, p_Info[ "from" ], p_Info[ "message" ], p_Info[ "time" ],  \
+                p_Info[ "longitude" ], p_Info[ "latitude" ] ) )
 
     con.commit( )
     con.close( )
@@ -224,7 +301,7 @@ if __name__ == "__main__":
 
 
 # OLD CODE
-
+"""
 @app.route( '/user/<user_name>' )
 def viewUser( user_name=None ):
 
@@ -264,3 +341,4 @@ def viewUser( user_name=None ):
 
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
+"""

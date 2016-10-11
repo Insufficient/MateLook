@@ -8,6 +8,15 @@
  * You will probably want to add  CSS to this file too
  */
 
+body {
+    padding: 35px;
+}
+
+.action-delete {
+    font-weight: bold;
+    color: red;
+}
+
 .profile-picture, .mate-picture {
     height: 125px;
     width: 125px;
