@@ -2,7 +2,7 @@
 
 from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup
 from collections import defaultdict
-import re, sys, os, glob, jinja2
+import re, sys, os, glob, jinja2, codecs
 import sqlite3 as sql
 app = Flask( __name__ )
 
@@ -278,7 +278,8 @@ def parseDataset( ):
         for post in posts:
             p_Info = defaultdict( lambda: None )
             u_PostDetails = os.path.join( post, "post.txt" )
-            with open( u_PostDetails, encoding="UTF-8", errors="ignore") as p:
+            #with open( u_PostDetails, encoding="UTF-8", errors="ignore") as p:
+            with codecs.open( u_PostDetails, 'r', encoding='utf-8') as p:
                 for line in p:
                     line = line.rstrip( )   # Chomp
                     lineInfo = line.split( "=", 1 ) # Split on '='
