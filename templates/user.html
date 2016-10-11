@@ -39,12 +39,20 @@
     </li>
     {% endfor %}
 
+    <div class="ui search">
+        <div class="ui icon input">
+            <input class="prompt" type="text" placeholder="Search posts...">
+            <i class="search icon"></i>
+        </div>
+        <div class="results"></div>
+    </div>
+
     <section class="ui raised very padded text container segment">
         <div class="ui comments">
             <h2 class="ui dividing header">Posts</h2>
             {% for post in pInfo %}
             {% set rowInfo = dictFromRow( post ) %}
-            <div class="comment">
+            <div class="comment comment-{{ loop.index }}">
                 <a class="avatar">
                     <img src="../profile_picture/{{ username }}" />
                 </a>
@@ -62,8 +70,8 @@
                         <a class="action-delete">Erase</a>
                     </div>
                 </div>
-            {% endfor %}
             </div>
+            {% endfor %}
         </div>
     </section>
 
@@ -77,5 +85,28 @@
     {% endif %}
     <textarea>{{ uInfo|string }}</textarea>
     <textarea>{{ pInfo|string }}</textarea>
+
+    <script>
+    var content = [
+        {% for post in pInfo %}
+        {% set rowInfo = dictFromRow( post ) %}
+        {title: '{{ rowInfo.message }}', action: '{{ loop.index }}'},
+        {% endfor %}
+      // etc
+    ];
+    $('.ui.search').search({
+        source: content,
+        maxResults: 3,
+        minCharacters: 3,
+        onSelect: function(result, response) {
+            $('html, body').animate({        // Scroll to Result
+                scrollTop: $( ".comment-" + result[ 'action' ] ).offset().top
+            }, 250 );
+            $( ".prompt" ).val( "" );        // Reset field
+            return false;
+        }
+    });
+    </script>
+
 </body>
 </html>
