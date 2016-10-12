@@ -1,0 +1,131 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+    <div class="ui error message">
+        <div class="header">Whoopsy!</div>
+        <p>{{ message }}</p>
+    </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+{% set users = uInfo %}
+{% set posts = pInfo %}
+{% set comments = cInfo %}
+{% set replies = rInfo %}
+
+{% if users or posts or comments or replies %}
+<div class="ui top attached tabular menu">
+    {% if users %}
+    <a class="item" data-tab="first">Users</a>
+    {% endif %}
+    {% if posts %}
+    <a class="item" data-tab="second">Posts</a>
+    {% endif %}
+    {% if comments %}
+    <a class="item" data-tab="third">Comments</a>
+    {% endif %}
+    {% if replies %}
+    <a class="item" data-tab="fourth">Replies</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if users %}
+<div class="ui bottom attached tab segment" data-tab="first">
+    <div class="ui centered doubling cards">
+        {% for user in users %}
+        {% set rowInfo = dictFromRow( user ) %}
+        <div class="ui card">
+            <div class="image">
+            <img class="profile-picture" src="{{ url_for( 'showProfPict', zID=rowInfo.zID ) }}">
+            </div>
+            <div class="content">
+                <a class="header" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID )}}">{{ rowInfo.full_name }}</a>
+                <div class="meta">
+                    <span class="date">{{ rowInfo.birthday }}</span>
+                </div>
+                <div class="description">
+                    {{ rowInfo.zID }}
+                </div>
+            </div>
+            <div class="extra content">
+                <a>
+                <i class="user icon"></i>
+                22 Friends
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% if posts %}
+<div class="ui bottom attached tab segment" data-tab="second">
+    <div class="ui cards">
+        {% for post in posts %}
+        {% set rowInfo = dictFromRow( post ) %}
+        <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
+            <div class="content">
+                <div class="right floated author">
+                    <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ rowInfo.zID }}
+                </div>
+                <div class="description">
+                    <p>{{ rowInfo.message|doMention|safe|urlize(40, target='_blank') }}</p>
+                    <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
+                </div>
+                <div class="actions">
+                    <a class="context" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}#post-{{ rowInfo.pID }}">Context</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% if comments %}
+<div class="ui bottom attached tab segment" data-tab="third">
+    <div class="ui cards">
+        {% for comment in comments %}
+        {% set rowInfo = dictFromRow( comment ) %}
+        <div class="ui raised fluid card post" id="comment-{{ rowInfo.cID }}">
+            <div class="content">
+                <div class="right floated author">
+                    <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ rowInfo.zID }}
+                </div>
+                <div class="description">
+                    <p>{{ rowInfo.message|doMention|safe|urlize(40, target='_blank') }}</p>
+                    <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
+                </div>
+                <div class="actions">
+                    <a class="context" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}#post-{{ rowInfo.pID }}">Context</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% if replies %}
+<div class="ui bottom attached tab segment" data-tab="fourth">
+    <div class="ui cards">
+        {% for reply in replies %}
+        {% set rowInfo = dictFromRow( reply ) %}
+        <div class="ui raised fluid card post" id="reply-{{ rowInfo.rID }}">
+            <div class="content">
+                <div class="right floated author">
+                    <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ rowInfo.zID }}
+                </div>
+                <div class="description">
+                    <p>{{ rowInfo.message|doMention|safe|urlize(40, target='_blank') }}</p>
+                    <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
+                </div>
+                <div class="actions">
+                    <a class="context" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}#post-{{ rowInfo.pID }}">Context</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
