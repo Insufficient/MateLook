@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3.5 -u
 
-from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup
+from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup, flash
 from collections import defaultdict
 import re, sys, os, glob, jinja2, codecs
 import sqlite3 as sql
@@ -10,49 +10,6 @@ users_dir = "static/dataset-large"
 db = "sql.db"
 con = None
 #
-
-@app.route( '/', methods=['GET', 'POST'] )
-def index( ):
-    if request.method == 'POST':
-        formUser = request.form[ 'username' ]             # Store username from form
-        formPass = request.form[ 'password' ]
-
-        formUser = re.findall( r'z[0-9]{7}', formUser )   # Only find zID.
-        if not formUser:
-            return render_template( "error.html", message="Please enter your zID in the form: z5555555." )
-            #return "Please enter your zID in the form: z5555555."
-        if not formPass:
-            return render_template( "error.html", message="Please enter a password." )
-
-        con = sql.connect( db )
-        cur = con.cursor( )
-        query = "SELECT password FROM User WHERE zID = \"{}\"".format( formUser[ 0 ] )
-        cur.execute( query )
-        con.commit( )
-        tmpPass = cur.fetchone( )
-        if not tmpPass:
-            return render_template( "error.html", message="The user does not exist" );
-        else:
-            if tmpPass[ 0 ] == formPass:
-                session[ 'username' ] = formUser[ 0 ]
-                return redirect( url_for( 'index' ) )
-            else:
-                return render_template( "error.html", message="Incorrect password." )
-        return render_template( "error.html", message="Invalid error!" )
-    elif 'username' in session:
-        return ''' \
-        <h2>Logged in as %s</h2>
-        <a href="logout"><button>Logout</button></a>
-        ''' % escape( session[ 'username'] )
-    else:
-        return '''
-            <form action="" method="post">
-                <label>Username</label>
-                <p><input type=text name=username>
-                <p><input type=password name=password>
-                <p><input type=submit value=Login>
-            </form>
-        '''
 
 @app.route( '/test' )
 def testView( ):
@@ -140,18 +97,48 @@ def viewUsers( user_name=None ):
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/', methods=['GET', 'POST'])
+def auth( ):
     if request.method == 'POST':
-        session['username'] = request.form['username']
-        return redirect(url_for('index'))
+        formUser = request.form[ 'zID' ]             # Store username from form
+        formPass = request.form[ 'password' ]
+        print( "User: " + formUser + "Password: " + formPass )
+        formUser = re.findall( r'z[0-9]{7}', formUser )   # Only find zID.
+        if not formUser:
+            return render_template( "login.html", message="Please enter your zID in the form: z5555555." )
+        if not formPass:
+            return render_template( "login.html", message="Please enter a password." )
+
+        print( request.form )
+        if request.form[ 'action' ] == 'Sign Up':
+            flash( "Signing up!" )
+            return render_template( "login.html" )
+        else:
+            con = sql.connect( db )
+            cur = con.cursor( )
+            query = "SELECT password FROM User WHERE zID = \"{}\"".format( formUser[ 0 ] )
+            cur.execute( query )
+            con.commit( )
+            tmpPass = cur.fetchone( )
+            if not tmpPass:
+                flash( "The user does not exist" )
+                return render_template( "login.html" );
+            else:
+                if tmpPass[ 0 ] == formPass:
+                    session[ 'username' ] = formUser[ 0 ]
+                    return redirect( url_for( 'viewUsers', user_name=formUser[ 0 ]) )
+                else:
+                    flash( "Incorrect password." )
+                    return render_template( "login.html" )
+        print( "Got to end?" )
+        return render_template( "login.html", message="Dead" )
     else:
-        return '<h1>Sorry bicboi.</h1>'
+        return render_template( "login.html" )
 
 @app.route( '/logout' )
 def logout( ):
     session.pop( 'username', None )
-    return redirect( url_for( 'index' ) )
+    return redirect( url_for( 'auth' ) )
 
 @app.route( '/profile_picture/<zID>' )
 def showProfPict( zID ):
@@ -223,6 +210,18 @@ def main( ):
     "time" TEXT,
     "longitude" TEXT,
     "latitude" TEXT)''' )
+    cur.execute( ''' \
+    CREATE TABLE "Comment" ("cID" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE  DEFAULT 0,
+    "pID" TEXT,
+    "zID" TEXT,
+    "message" TEXT,
+    "time" TEXT)''' )
+    cur.execute( ''' \
+    CREATE TABLE "Reply" ("rID" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE  DEFAULT 0,
+    "cID" TEXT,
+    "zID" TEXT,
+    "message" TEXT,
+    "time" TEXT)''' )
     cur.execute( '''CREATE TABLE "Mate" ("zID" TEXT NOT NULL , "mateID" TEXT)''' )
     cur.execute( '''CREATE TABLE "Course" ("zID" TEXT NOT NULL , "courseID" TEXT)''' )
     con.commit( );
@@ -233,6 +232,8 @@ def main( ):
 def parseDataset( ):
     users = sorted( glob.glob( os.path.join( users_dir, "*" ) ) )
     con = sql.connect( db )
+    pInc = 0
+    cInc = 0
     for user in users:
         """
             Read user information from user.txt
@@ -272,13 +273,10 @@ def parseDataset( ):
             Read posts/comments/replies
             ( zID, message, time, from, longitude, latitude )
         """
-        # postDir = os.path.join( user, "posts" )
-        # print( "PostDir: " + postDir )
         posts = sorted( glob.glob( os.path.join( user, "posts", "*" ) ) )
         for post in posts:
             p_Info = defaultdict( lambda: None )
             u_PostDetails = os.path.join( post, "post.txt" )
-            #with open( u_PostDetails, encoding="UTF-8", errors="ignore") as p:
             with codecs.open( u_PostDetails, 'r', encoding='utf-8') as p:
                 for line in p:
                     line = line.rstrip( )   # Chomp
@@ -287,10 +285,60 @@ def parseDataset( ):
 
                     p_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
 
+            pInc += 1
             cur = con.cursor( )
-            cur.execute( "INSERT INTO Post VALUES( ?, ?, ?, ?, ?, ? )", (    \
+            cur.execute( "INSERT INTO Post VALUES( ?, ?, ?, ?, ?, ? )", (       \
                 None, p_Info[ "from" ], p_Info[ "message" ], p_Info[ "time" ],  \
                 p_Info[ "longitude" ], p_Info[ "latitude" ] ) )
+
+
+            """ Store comments """
+            if not os.path.isdir( os.path.join( post, "comments" ) ):      # Check if a comments folder exists.
+                continue
+
+            comments = sorted( glob.glob( os.path.join( post, "comments", "*" ) ) )
+            for comment in comments:
+                c_Info = defaultdict( lambda: None )
+                u_CommDetails = os.path.join( comment, "comment.txt" )
+                with codecs.open( u_CommDetails, 'r', encoding='utf-8') as p:
+                    for line in p:
+                        line = line.rstrip( )   # Chomp
+                        lineInfo = line.split( "=", 1 ) # Split on '='
+                        if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
+
+                        if( lineInfo[ 0 ] == "message" ):       # If we find z5555555, convert it into @z5555555
+                            lineInfo[ 1 ] = re.sub( r'(z[0-9]{7})', r'@\1', lineInfo[ 1 ] )
+
+                        c_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
+
+                cInc += 1
+                cur = con.cursor( )
+                cur.execute( "INSERT INTO Comment VALUES( ?, ?, ?, ?, ? )", (       \
+                    None, pInc, c_Info[ "from" ], c_Info[ "message" ],              \
+                    c_Info[ "time" ] ) )
+
+                if not os.path.isdir( os.path.join( comment, "replies" ) ):      # Check if a comments folder exists.
+                    continue
+
+                replies = sorted( glob.glob( os.path.join( comment, "replies", "*" ) ) )
+                for reply in replies:
+                    r_Info = defaultdict( lambda: None )
+                    u_ReplDetails = os.path.join( reply, "reply.txt" )
+                    with codecs.open( u_ReplDetails, 'r', encoding='utf-8') as p:
+                        for line in p:
+                            line = line.rstrip( )   # Chomp
+                            lineInfo = line.split( "=", 1 ) # Split on '='
+                            if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
+
+                            if( lineInfo[ 0 ] == "message" ):       # If we find z5555555, convert it into @z5555555
+                                lineInfo[ 1 ] = re.sub( r'(z[0-9]{7})', r'@\1', lineInfo[ 1 ] )
+
+                            r_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
+
+                    cur = con.cursor( )
+                    cur.execute( "INSERT INTO Reply VALUES( ?, ?, ?, ?, ? )", (       \
+                        None, cInc, r_Info[ "from" ], r_Info[ "message" ],              \
+                        c_Info[ "time" ] ) )
 
     con.commit( )
     con.close( )
@@ -342,4 +390,49 @@ def viewUser( user_name=None ):
 
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
+"""
+
+"""
+@app.route( '/', methods=['GET', 'POST'] )
+def index( ):
+    if request.method == 'POST':
+        formUser = request.form[ 'username' ]             # Store username from form
+        formPass = request.form[ 'password' ]
+
+        formUser = re.findall( r'z[0-9]{7}', formUser )   # Only find zID.
+        if not formUser:
+            return render_template( "error.html", message="Please enter your zID in the form: z5555555." )
+            #return "Please enter your zID in the form: z5555555."
+        if not formPass:
+            return render_template( "error.html", message="Please enter a password." )
+
+        con = sql.connect( db )
+        cur = con.cursor( )
+        query = "SELECT password FROM User WHERE zID = \"{}\"".format( formUser[ 0 ] )
+        cur.execute( query )
+        con.commit( )
+        tmpPass = cur.fetchone( )
+        if not tmpPass:
+            return render_template( "error.html", message="The user does not exist" );
+        else:
+            if tmpPass[ 0 ] == formPass:
+                session[ 'username' ] = formUser[ 0 ]
+                return redirect( url_for( 'index' ) )
+            else:
+                return render_template( "error.html", message="Incorrect password." )
+        return render_template( "error.html", message="Invalid error!" )
+    elif 'username' in session:
+        return ''' \
+        <h2>Logged in as %s</h2>
+        <a href="logout"><button>Logout</button></a>
+        ''' % escape( session[ 'username'] )
+    else:
+        return '''
+            <form action="" method="post">
+                <label>Username</label>
+                <p><input type=text name=username>
+                <p><input type=password name=password>
+                <p><input type=submit value=Login>
+            </form>
+        '''
 """

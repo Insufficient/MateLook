@@ -1,5 +1,10 @@
 {% include 'header.html' %}
 <body>
+    <section class="header">
+        <div class="ui fluid container">
+        </div>
+    </section>
+
     {% if uInfo.full_name %}
         <h1>Name: {{ uInfo.full_name }}</h1>
     {% endif %}
@@ -52,7 +57,7 @@
             <h2 class="ui dividing header">Posts</h2>
             {% for post in pInfo %}
             {% set rowInfo = dictFromRow( post ) %}
-            <div class="comment comment-{{ loop.index }}">
+            <div class="comment" id="comment-{{ loop.index }}">
                 <a class="avatar">
                     <img src="../profile_picture/{{ username }}" />
                 </a>
@@ -87,6 +92,27 @@
     <textarea>{{ pInfo|string }}</textarea>
 
     <script>
+
+    $('.ui.form')
+        .form({
+            fields: {
+                zID: {
+                    rules: [{
+                        type: 'regExp',
+                        value: /z[0-9]{7}/i,
+                        prompt: 'Please enter a valid zID.'
+                    }]
+                },
+                password: {
+                    rules: [{
+                        type   : 'minLength[4]',
+                        prompt: 'Please enter at least FOUR characters for your password.'
+                    }]
+                }
+        }
+    })
+    ;
+
     var content = [
         {% for post in pInfo %}
         {% set rowInfo = dictFromRow( post ) %}
@@ -100,7 +126,7 @@
         minCharacters: 3,
         onSelect: function(result, response) {
             $('html, body').animate({        // Scroll to Result
-                scrollTop: $( ".comment-" + result[ 'action' ] ).offset().top
+                scrollTop: $( "#comment-" + result[ 'action' ] ).offset().top
             }, 250 );
             $( ".prompt" ).val( "" );        // Reset field
             return false;
