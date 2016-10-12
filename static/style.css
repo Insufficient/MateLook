@@ -17,3 +17,23 @@
     max-width: 450px;
     margin: 0 auto;
 }
+
+.post div:nth-child(n+6)
+{
+    display: none;
+}
+
+.mini.ui.grey.button.toggle_comments {
+    margin-top: 15px;
+}
+
+.mate-picture {
+    height: 125px;
+    width: 125px;
+    border-radius: 50%;
+    min-width: 125px;
+}
+
+[data-tooltip]:hover:before, [data-tooltip]:hover:after {
+    font-size: 0.8em !important;
+}

@@ -170,6 +170,28 @@ def getInfo( zID, infoName="*" ):
     con.close( )
     return result[ 0 ]
 
+""" getPost( tID, type )
+    tID     - ID of post/comment/reply
+    type    - 0 (post), 1 (comment), 2 (reply)
+"""
+def getPost( tID, type="Post" ):
+    if type == "Post":
+        colID = "zID"
+    elif type == "Comment":
+        colID = "pId"
+    else:
+        colID = "cID"
+    con = sql.connect( db )
+    con.row_factory = sql.Row
+    cur = con.cursor( )
+    cur.execute( "SELECT * FROM {} WHERE {} = ?".format( type, colID ), ( tID, ) )
+    #print( "SELECT zID, message FROM {} WHERE {} = {}".format( type, colID, tID ) )
+    con.commit( )
+    result = cur.fetchall( )
+    print( result )
+    con.close( )
+    return result
+
 def doMention( longString ):
     longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', str( jinja2.escape( longString ) ) )
     longString = re.sub( r'\\n', r'<br/>', longString )
@@ -185,6 +207,7 @@ def main( ):
     app.jinja_env.globals.update( getInfo=getInfo )
     app.jinja_env.globals.update( getSess=getSess )
     app.jinja_env.globals.update( dictFromRow=dictFromRow )
+    app.jinja_env.globals.update( getPost=getPost )
     app.jinja_env.filters['doMention'] = doMention
 
 
@@ -336,7 +359,7 @@ def parseDataset( ):
                             r_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
 
                     cur = con.cursor( )
-                    cur.execute( "INSERT INTO Reply VALUES( ?, ?, ?, ?, ? )", (       \
+                    cur.execute( "INSERT INTO Reply VALUES( ?, ?, ?, ?, ? )", (         \
                         None, cInc, r_Info[ "from" ], r_Info[ "message" ],              \
                         c_Info[ "time" ] ) )
 

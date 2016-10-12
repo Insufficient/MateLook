@@ -15,34 +15,23 @@
         <h2>Email: {{ uInfo.email }}</h2>
     {% endif %}
 
-    {% if uInfo.mates %}
-        <h2>Mates:</h2>
-        {% for mate in uInfo.mates %}
-            <li class="mate">
-                <a href="{{mate}}" class="mate-name">{{ getInfo( mate, "full_name" ) }}</a>
-                <!-- <img class="mate_picture" src="../{{ img }}/../../{{ mate }}/profile.jpg" /> -->
-                <img class="mate-picture" src="../profile_picture/{{ mate }}" />
-            </li>
-        {% endfor %}
-    {% endif %}
-
-    <!-- <section class="posts">
-    {% for post in pInfo %}
-        {% set rowInfo = dictFromRow( post ) %}
-        <h3>From: {{ rowInfo.zID }}</h3>
-        <h4>Message: {{ rowInfo.message|doMention|safe }}</h4>
-    {% endfor %}
-    </section> -->
-
-    <h1>Mates</h1>
-    {% for mate in mInfo %}
-    {% set rowInfo = dictFromRow( mate ) %}
-    <li class="mate">
-        <a href="{{ rowInfo.mateID }}" class="mate-name">{{ getInfo( rowInfo.mateID, "full_name" ) }}</a>
-        <!-- <img class="mate_picture" src="../{{ img }}/../../{{ mate }}/profile.jpg" /> -->
-        <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
-    </li>
-    {% endfor %}
+    <div class="ui fluid container">
+        {% if mInfo %}
+            <h1>Mates</h1>
+            <div class="ui doubling grid">
+            {% for mate in mInfo %}
+            {% set rowInfo = dictFromRow( mate ) %}
+            <div class="column mate">
+                <div class="image">
+                    <a class="ui" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
+                        <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 
     <div class="ui search">
         <div class="ui icon input">
@@ -51,34 +40,64 @@
         </div>
         <div class="results"></div>
     </div>
-
-    <section class="ui raised very padded text container segment">
-        <div class="ui comments">
-            <h2 class="ui dividing header">Posts</h2>
+    <div class="ui segment">
+        <div class="ui left rail">
+            <div class="ui segment">
+            <h1>Please display bro?</h1>
+            </div>
+        </div>
+    <div class="ui text container">
+        <div class="ui cards">
             {% for post in pInfo %}
             {% set rowInfo = dictFromRow( post ) %}
-            <div class="comment" id="comment-{{ loop.index }}">
-                <a class="avatar">
-                    <img src="../profile_picture/{{ username }}" />
-                </a>
+            <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
                 <div class="content">
-                    <a class="author">{{ rowInfo.zID }}</a>
-                    <div class="metadata">
-                        <span class="date">{{ rowInfo.time}}</span>
+                    <div class="right floated author">
+                        <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }}
                     </div>
-                    <div class="text">
-                        {{ rowInfo.message|doMention|safe }}
+                    <div class="description">
+                        <p>{{ rowInfo.message|doMention|safe }}</p>
+                        <span class="right floated time">{{ rowInfo.time}}</span>
                     </div>
-                    <div class="actions">
-                        <a class="reply">Reply</a>
-                        <a class="action-edit">Edit</a>
-                        <a class="action-delete">Erase</a>
+                </div>
+                <div class="extra content">
+                    <div class="ui comments">
+                        {% set rs = getPost( rowInfo.pID, 'Comment' ) %}
+                        {% if rs|length > 0 %}
+                        <h3 class="ui dividing header">Comments</h3>
+                        {% else %}
+                        <h3>ADD SOME COMMENTS</h3>
+                        {% endif %}
+                        {% set counter = [ ] %}
+                        {% for comment in rs %}
+                        {% set row_Info = dictFromRow( comment ) %}
+                        {% if counter.append('1') %}{% endif %}
+                        <div class="comment">
+                            <a class="avatar">
+                                <img src="../profile_picture/{{ row_Info.zID}}">
+                            </a>
+                            <div class="content">
+                                <a href="{{ row_Info.zID }}" class="author">{{ getInfo( row_Info.zID, "full_name" )}}</a>
+                                <div class="metadata">
+                                    <span class="date">{{ row_Info.time }}</span>
+                                </div>
+                                <div class="text">{{ row_Info.message|doMention|safe }}</div>
+                                <div class="actions">
+                                    <a class="reply">Reply</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if counter|length > 4 %}
+                        <button data-toggle="{{ rowInfo.pID }}" class="mini ui grey button toggle_comments">Show more comments.</button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-    </section>
+    </div>
+</div>
 
     {% if username == getSess( ) %}
         {% if uInfo.courses %}
@@ -93,30 +112,10 @@
 
     <script>
 
-    $('.ui.form')
-        .form({
-            fields: {
-                zID: {
-                    rules: [{
-                        type: 'regExp',
-                        value: /z[0-9]{7}/i,
-                        prompt: 'Please enter a valid zID.'
-                    }]
-                },
-                password: {
-                    rules: [{
-                        type   : 'minLength[4]',
-                        prompt: 'Please enter at least FOUR characters for your password.'
-                    }]
-                }
-        }
-    })
-    ;
-
     var content = [
         {% for post in pInfo %}
         {% set rowInfo = dictFromRow( post ) %}
-        {title: '{{ rowInfo.message }}', action: '{{ loop.index }}'},
+        {title: '{{ rowInfo.message }}', action: '{{ rowInfo.pID }}'},
         {% endfor %}
       // etc
     ];
@@ -126,11 +125,26 @@
         minCharacters: 3,
         onSelect: function(result, response) {
             $('html, body').animate({        // Scroll to Result
-                scrollTop: $( "#comment-" + result[ 'action' ] ).offset().top
+                scrollTop: $( "#post-" + result[ 'action' ] ).offset().top
             }, 250 );
             $( ".prompt" ).val( "" );        // Reset field
             return false;
         }
+    });
+
+    $( '.toggle_comments' ).on( 'click', function( ) {
+        var pID = $( this ).data( "toggle" )
+        var text = $( this ).text( );
+        console.log( text );
+        if( text == "Show more comments." ) {
+            $( this ).text( "Hide comments." );
+        } else {
+            $( this ).text( "Show more comments." );
+            $('html, body').animate({        // Scroll to Result
+                scrollTop: $( "#post-" + pID ).offset().top
+            }, 500 );
+        }
+        $( "#post-" + pID + " div:nth-child(n+6)").toggle( "500" );
     });
     </script>
 
