@@ -1,0 +1,43 @@
+{% include 'header.html' %}
+<body>
+    <section class="intro">
+        {% if message %}
+        <div class="ui error message">
+            <div class="header">Whoopsy!</div>
+            <p>{{ message }}</p>
+        </div>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="ui error message">
+                <div class="header">Whoopsy!</div>
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <div class="ui fluid container">
+            {% if getSess( ) == None %}
+            <form class="ui large form intro-login" action="{{ url_for( 'auth' ) }}" method="POST">
+                <div class="field">
+                    <label>zID</label>
+                    <input type="text" name="zID" placeholder="z5555555">
+                </div>
+                <div class="field">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="*****">
+                </div>
+                <input class="ui primary button" name="action" type="submit" value="Login">
+                </input>
+                <input class="ui secondary button" name="action" type="submit" value="Sign Up">
+                </input>
+                <div class="ui error message"></div>
+            </form>
+            {% endif %}
+        </div>
+    </section>
+
+</body>
+</html>
