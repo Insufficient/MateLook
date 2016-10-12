@@ -97,6 +97,41 @@ def viewUsers( user_name=None ):
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
+@app.route('/search/<searchQuery>' )
+def search( searchQuery ):
+    if len( searchQuery ) > 2:
+        u_Info = defaultdict( lambda: None )
+        p_Info = defaultdict( lambda: None )
+        c_Info = defaultdict( lambda: None )
+        r_Info = defaultdict( lambda: None )
+        print( "Search Query: " + searchQuery )
+        con = sql.connect( db )
+        con.row_factory = sql.Row
+        cur = con.cursor( )
+        cur.execute( "SELECT * FROM User WHERE full_name LIKE ?", [ '%'+searchQuery+'%' ] )
+        result = cur.fetchall( )
+        u_Info = result
+        cur = con.cursor( )
+        cur.execute( "SELECT * FROM Post WHERE message LIKE ?", [ '%'+searchQuery+'%' ] )
+        result = cur.fetchall( )
+        p_Info = result
+        cur = con.cursor( )
+        cur.execute( "SELECT * FROM Comment WHERE message LIKE ?", [ '%'+searchQuery+'%' ] )
+        result = cur.fetchall( )
+        c_Info = result
+        cur = con.cursor( )
+        cur.execute( "SELECT * FROM Reply WHERE message LIKE ?", [ '%'+searchQuery+'%' ] )
+        result = cur.fetchall( )
+        r_Info = result
+        cur = con.cursor( )
+        con.close( )
+        return render_template( "search.html", uInfo=u_Info, pInfo=p_Info, cInfo=c_Info, rInfo=r_Info )
+    else:
+        flash( "Please enter at least three characters to search." )
+        return render_template( "search.html" )
+
+
+
 @app.route('/', methods=['GET', 'POST'])
 def auth( ):
     if request.method == 'POST':
@@ -163,7 +198,6 @@ def getSess( ):
 def getInfo( zID, infoName="*" ):
     con = sql.connect( db )
     cur = con.cursor( )
-    #query = "SELECT ? FROM User WHERE zID = \"{}\"".format( zID )
     cur.execute( "SELECT {} FROM User WHERE zID = ?".format( infoName ), (zID, ) )
     con.commit( )
     result = cur.fetchone( )
@@ -225,7 +259,8 @@ def main( ):
         "email" TEXT,
         "password" TEXT,
         "birthday" TEXT,
-        "home_suburb" TEXT )''' )
+        "home_suburb" TEXT,
+        "program" TEXT )''' )
     cur.execute( ''' \
     CREATE TABLE "Post" ("pID" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE  DEFAULT 0,
     "zID" TEXT,
@@ -242,6 +277,7 @@ def main( ):
     cur.execute( ''' \
     CREATE TABLE "Reply" ("rID" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE  DEFAULT 0,
     "cID" TEXT,
+    "pID" TEXT,
     "zID" TEXT,
     "message" TEXT,
     "time" TEXT)''' )
@@ -287,11 +323,13 @@ def parseDataset( ):
                 u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
 
         cur = con.cursor( )
-        query = "INSERT INTO {} VALUES(\"{}\",\"{}\",\"{}\",\"{}\",\"{}\", \"{}\");".format( "User",     \
-                u_Info[ "zid"], u_Info[ "full_name" ], u_Info[ "email" ], u_Info[ "password" ], \
-                u_Info[ "birthday" ], u_Info[ "home_suburb" ] )
-        cur.execute( query )
-
+        # query = "INSERT INTO {} VALUES(\"{}\",\"{}\",\"{}\",\"{}\",\"{}\", \"{}\");".format( "User",     \
+        #         u_Info[ "zid"], u_Info[ "full_name" ], u_Info[ "email" ], u_Info[ "password" ], \
+        #         u_Info[ "birthday" ], u_Info[ "home_suburb" ] )
+        # cur.execute( query )
+        cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)", ( u_Info[ "zid"],     \
+                u_Info[ "full_name" ], u_Info[ "email" ], u_Info[ "password" ],             \
+                u_Info[ "birthday" ], u_Info[ "home_suburb" ], u_Info[ "program" ] ) )
         """
             Read posts/comments/replies
             ( zID, message, time, from, longitude, latitude )
@@ -359,8 +397,8 @@ def parseDataset( ):
                             r_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
 
                     cur = con.cursor( )
-                    cur.execute( "INSERT INTO Reply VALUES( ?, ?, ?, ?, ? )", (         \
-                        None, cInc, r_Info[ "from" ], r_Info[ "message" ],              \
+                    cur.execute( "INSERT INTO Reply VALUES( ?, ?, ?, ?, ?, ? )", (      \
+                        None, cInc, pInc, r_Info[ "from" ], r_Info[ "message" ],        \
                         c_Info[ "time" ] ) )
 
     con.commit( )

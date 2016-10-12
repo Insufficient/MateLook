@@ -35,7 +35,7 @@
 
     <div class="ui search">
         <div class="ui icon input">
-            <input class="prompt" type="text" placeholder="Search posts...">
+            <input class="prompt search-field" type="text" placeholder="Search posts...">
             <i class="search icon"></i>
         </div>
         <div class="results"></div>
@@ -56,39 +56,62 @@
                         <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }}
                     </div>
                     <div class="description">
-                        <p>{{ rowInfo.message|doMention|safe }}</p>
-                        <span class="right floated time">{{ rowInfo.time}}</span>
+                        <p>{{ rowInfo.message|doMention|safe|urlize(40, target='_blank') }}</p>
+                        <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
+                        <div class="actions">
+                            <a class="reply">Reply</a>
+                        </div>
                     </div>
                 </div>
                 <div class="extra content">
-                    <div class="ui comments">
-                        {% set rs = getPost( rowInfo.pID, 'Comment' ) %}
-                        {% if rs|length > 0 %}
+                    <div class="ui minimal comments">
+                        {% set comments = getPost( rowInfo.pID, 'Comment' ) %}
+                        {% if comments|length > 0 %}
                         <h3 class="ui dividing header">Comments</h3>
                         {% else %}
-                        <h3>ADD SOME COMMENTS</h3>
                         {% endif %}
                         {% set counter = [ ] %}
-                        {% for comment in rs %}
+                        {% for comment in comments %}
                         {% set row_Info = dictFromRow( comment ) %}
                         {% if counter.append('1') %}{% endif %}
-                        <div class="comment">
+                        <div class="comment" id="comment-{{ rowInfo.cID }}">
                             <a class="avatar">
                                 <img src="../profile_picture/{{ row_Info.zID}}">
                             </a>
                             <div class="content">
                                 <a href="{{ row_Info.zID }}" class="author">{{ getInfo( row_Info.zID, "full_name" )}}</a>
                                 <div class="metadata">
-                                    <span class="date">{{ row_Info.time }}</span>
+                                    <span class="date">{{ row_Info.time|truncate( 10, True, '' ) }}</span>
                                 </div>
                                 <div class="text">{{ row_Info.message|doMention|safe }}</div>
                                 <div class="actions">
                                     <a class="reply">Reply</a>
                                 </div>
                             </div>
+                            {% set replies = getPost( row_Info.cID, 'Reply' ) %}
+                            {% for reply in replies %}
+                            {% set rowInfo_ = dictFromRow( reply ) %}
+                            <div class="comments minimal replies" id="reply-{{ rowInfo.rID }}">
+                                <div class="comment">
+                                    <a class="avatar">
+                                        <img src="../profile_picture/{{ rowInfo_.zID}}">
+                                    </a>
+                                    <div class="content">
+                                        <a href="{{ rowInfo_.zID }}" class="author">{{ getInfo( rowInfo_.zID, "full_name" )}}</a>
+                                        <div class="metadata">
+                                            <span class="date">{{ rowInfo_.time|truncate( 10, True, '' ) }}</span>
+                                        </div>
+                                        <div class="text">{{ rowInfo_.message|doMention|safe }}</div>
+                                        <div class="actions">
+                                            <a class="reply">Reply</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
                         {% endfor %}
-                        {% if counter|length > 4 %}
+                        {% if counter|length > 3 %}
                         <button data-toggle="{{ rowInfo.pID }}" class="mini ui grey button toggle_comments">Show more comments.</button>
                         {% endif %}
                     </div>
@@ -96,6 +119,9 @@
             </div>
             {% endfor %}
         </div>
+    </div>
+
+    <div class="ui modal search-results">
     </div>
 </div>
 
@@ -112,25 +138,44 @@
 
     <script>
 
-    var content = [
-        {% for post in pInfo %}
-        {% set rowInfo = dictFromRow( post ) %}
-        {title: '{{ rowInfo.message }}', action: '{{ rowInfo.pID }}'},
-        {% endfor %}
-      // etc
-    ];
-    $('.ui.search').search({
-        source: content,
-        maxResults: 3,
-        minCharacters: 3,
-        onSelect: function(result, response) {
-            $('html, body').animate({        // Scroll to Result
-                scrollTop: $( "#post-" + result[ 'action' ] ).offset().top
-            }, 250 );
-            $( ".prompt" ).val( "" );        // Reset field
-            return false;
+    // var content = [
+    //
+    // {% for post in pInfo %}
+    // {% set rowInfo = dictFromRow( post ) %}
+    // {title: '{{ rowInfo.message }}', action: '{{ rowInfo.pID }}'},
+    // {% endfor %}
+    //   // etc
+    // ];
+
+    $( '.ui.modal' ).modal( );
+
+    $( '.search-field').keypress( function( e ) {
+        console.log( 'Text:' + $( '.search-field' ).val( ) );
+        if( event.which == 13 ) {
+            if( $( '.search-field' ).val( ).length > 2 ) {
+                $( '.search-results' ).load( '/search/' + $( '.search-field' ).val( ) , function( ) {
+                    $( '.menu .item' ).tab( {
+                        'onVisible': function( ) {
+                            $( '.ui.modal' ).modal( 'refresh' );
+                        } } );
+                    // });
+                    $( '.ui.modal' ).modal( 'show' );
+                });
+            }
         }
-    });
+    } );
+    // $('.ui.search').search({
+    //     source: content,
+    //     maxResults: 3,
+    //     minCharacters: 3,
+    //     onSelect: function(result, response) {
+    //         $('html, body').animate({        // Scroll to Result
+    //             scrollTop: $( "#post-" + result[ 'action' ] ).offset().top
+    //         }, 250 );
+    //         $( ".prompt" ).val( "" );        // Reset field
+    //         return false;
+    //     }
+    // });
 
     $( '.toggle_comments' ).on( 'click', function( ) {
         var pID = $( this ).data( "toggle" )
