@@ -97,9 +97,10 @@ def viewUsers( user_name=None ):
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
-@app.route('/search/<searchQuery>' )
-def search( searchQuery ):
-    if len( searchQuery ) > 2:
+@app.route('/search', methods=['POST'] )
+def search( ):
+    searchQuery = request.form[ 'search' ]
+    if searchQuery != None and len( searchQuery ) > 2:
         u_Info = defaultdict( lambda: None )
         p_Info = defaultdict( lambda: None )
         c_Info = defaultdict( lambda: None )
