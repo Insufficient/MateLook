@@ -134,23 +134,52 @@ def search( searchQuery ):
 
 @app.route('/', methods=['GET', 'POST'])
 def auth( ):
+    loggedIn = getSess( )
+    if loggedIn != None:                                # Redirect users to view page if they are logged in
+        return redirect( url_for( 'viewUsers', user_name=loggedIn ) )
     if request.method == 'POST':
-        formUser = request.form[ 'zID' ]             # Store username from form
-        formPass = request.form[ 'password' ]
-        # print( "User: " + formUser + "Password: " + formPass )
-        formUser = re.findall( r'z[0-9]{7}', formUser )   # Only find zID.
-        if not formUser:
-            return render_template( "login.html", message="Please enter your zID in the form: z5555555." )
-        if not formPass:
-            return render_template( "login.html", message="Please enter a password." )
+        formUser = request.form[ 'zID' ]                    # Store username from form
+        formPass = request.form[ 'password' ]               # Store password from form
+        formEmail = request.form[ 'email' ]                 # Store email from form
+        formName = request.form[ 'name' ]
 
-        # print( request.form )
+        formUser = re.findall( r'z[0-9]{7}', formUser )     # Store only zID
+
+        if not formUser:
+            flash( "Please enter your zID in the form: z5555555." )
+            return render_template( "login.html" )
+        if not formPass:
+            flash( "Please enter a password." )
+            return render_template( "login.html", user=formUser[ 0 ] )
+
         if request.form[ 'action' ] == 'Sign Up':
+            if not formEmail:
+                flash( "Please enter a email!" )
+                return render_template( "login.html", user=formUser[ 0 ], pw=formPass )
+
+            con = sql.connect( db )
+            cur = con.cursor( )
+            cur.execute( "SELECT zID FROM User WHERE zID=?", [ formUser[ 0 ] ] )
+            con.commit( )
+            result = cur.fetchone( )
+            if not result:
+                try:
+                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)", ( \
+                    formUser[ 0 ], formName, formEmail, formPass, None, None, None ) )
+                    con.commit( )
+                    return redirect( url_for( 'viewUsers', user_name=formUser[ 0 ] ) )
+                except sqlite3.Error as e:
+                    print( "An error occurred!", e.args[ 0 ] )
+            else:
+                flash( "The user " + formUser[ 0 ] + " already exists." )
+                return render_template( "login.html" )
+
             flash( "Signing up!" )
             return render_template( "login.html" )
         else:
             con = sql.connect( db )
             cur = con.cursor( )
+            # Pls change
             query = "SELECT password FROM User WHERE zID = \"{}\"".format( formUser[ 0 ] )
             cur.execute( query )
             con.commit( )
@@ -161,10 +190,10 @@ def auth( ):
             else:
                 if tmpPass[ 0 ] == formPass:
                     session[ 'username' ] = formUser[ 0 ]
-                    return redirect( url_for( 'viewUsers', user_name=formUser[ 0 ]) )
+                    return redirect( url_for( 'viewUsers', user_name=formUser[ 0 ] ) )
                 else:
                     flash( "Incorrect password." )
-                    return render_template( "login.html" )
+                    return render_template( "login.html", user=formUser[ 0 ] )
         return render_template( "login.html", message="Dead" )
     else:
         return render_template( "login.html" )
@@ -201,7 +230,10 @@ def getInfo( zID, infoName="*" ):
     con.commit( )
     result = cur.fetchone( )
     con.close( )
-    return result[ 0 ]
+    if result:
+        return result[ 0 ]
+    else:
+        return None
 
 """ getPost( tID, type )
     tID     - ID of post/comment/reply

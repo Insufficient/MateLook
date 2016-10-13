@@ -1,52 +1,142 @@
 {% include 'header.html' %}
 <body>
-    <section class="header">
+    {% set sessName = getSess( ) %}
+    {% if sessName %}
+    <section class="page-header">
         <div class="ui fluid container">
+            <div class="ui grey secondary menu">
+                <a class="item active">{{ getInfo( sessName, 'full_name') }}</a>
+                <div class="right menu">
+                    <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="hero">
+        <div class="ui fluid container">
+            <div class="ui grid profile">
+                <div class="two wide column">
+                    <img class="profile-picture" src="../profile_picture/{{ username }}" />
+                </div>
+                <div class="four wide column">
+                    {% if uInfo %}
+                    <h1>{{ uInfo.full_name }}</h1>
+                    <h2>{{ uInfo.program }}</h2>
+                    <p>{{ uInfo.birthday }}</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </section>
 
-    {% if uInfo.full_name %}
-        <h1>Name: {{ uInfo.full_name }}</h1>
-    {% endif %}
+    <section class="search-bar">
+        <div class="ui search large">
+            <div class="ui icon input">
+                <input class="prompt search-field" type="text" placeholder="Search">
+                <i class="search icon"></i>
+            </div>
+        </div>
+    </section>
 
-    <img class="profile-picture" src="../profile_picture/{{ username }}" />
-
-    {% if uInfo.email %}
-        <h2>Email: {{ uInfo.email }}</h2>
-    {% endif %}
-
-    <div class="ui fluid container">
-        {% if mInfo %}
-            <h1>Mates</h1>
-            <div class="ui doubling grid">
-            {% for mate in mInfo %}
-            {% set rowInfo = dictFromRow( mate ) %}
-            <div class="column mate">
-                <div class="image">
-                    <a class="ui" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
-                        <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
-                    </a>
+    <section class="mates">
+        <div class="ui fluid container">
+            {% if mInfo %}
+                <h1>Mates</h1>
+                <div class="ui doubling grid">
+                    {% for mate in mInfo %}
+                    {% set rowInfo = dictFromRow( mate ) %}
+                    <div class="column mate">
+                        <div class="image">
+                            <a class="ui" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
+                                <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
-            </div>
-            {% endfor %}
-            </div>
-        {% endif %}
-    </div>
+            {% endif %}
+        </div>
+    </section>
 
-    <div class="ui search">
-        <div class="ui icon input">
-            <input class="prompt search-field" type="text" placeholder="Search posts...">
-            <i class="search icon"></i>
+    <section class="content">
+        <div class="ui text container">
+            <div class="ui cards">
+                {% for post in pInfo %}
+                {% set rowInfo = dictFromRow( post ) %}
+                <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
+                    <div class="content">
+                        <div class="right floated author">
+                            <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }}
+                        </div>
+                        <div class="description">
+                            <p>{{ rowInfo.message|doMention|safe|urlize(40, target='_blank') }}</p>
+                            <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
+                            <div class="actions">
+                                <a class="reply">Reply</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="extra content">
+                        <div class="ui minimal comments">
+                            {% set comments = getPost( rowInfo.pID, 'Comment' ) %}
+                            {% if comments|length > 0 %}
+                            <h3 class="ui dividing header">Comments</h3>
+                            {% else %}
+                            {% endif %}
+                            {% set counter = [ ] %}
+                            {% for comment in comments %}
+                            {% set row_Info = dictFromRow( comment ) %}
+                            {% if counter.append('1') %}{% endif %}
+                            <div class="comment" id="comment-{{ rowInfo.cID }}">
+                                <a class="avatar">
+                                    <img src="../profile_picture/{{ row_Info.zID}}">
+                                </a>
+                                <div class="content">
+                                    <a href="{{ row_Info.zID }}" class="author">{{ getInfo( row_Info.zID, "full_name" )}}</a>
+                                    <div class="metadata">
+                                        <span class="date">{{ row_Info.time|truncate( 10, True, '' ) }}</span>
+                                    </div>
+                                    <div class="text">{{ row_Info.message|doMention|safe }}</div>
+                                    <div class="actions">
+                                        <a class="reply">Reply</a>
+                                    </div>
+                                </div>
+                                {% set replies = getPost( row_Info.cID, 'Reply' ) %}
+                                {% for reply in replies %}
+                                {% set rowInfo_ = dictFromRow( reply ) %}
+                                <div class="comments minimal replies" id="reply-{{ rowInfo.rID }}">
+                                    <div class="comment">
+                                        <a class="avatar">
+                                            <img src="../profile_picture/{{ rowInfo_.zID}}">
+                                        </a>
+                                        <div class="content">
+                                            <a href="{{ rowInfo_.zID }}" class="author">{{ getInfo( rowInfo_.zID, "full_name" )}}</a>
+                                            <div class="metadata">
+                                                <span class="date">{{ rowInfo_.time|truncate( 10, True, '' ) }}</span>
+                                            </div>
+                                            <div class="text">{{ rowInfo_.message|doMention|safe }}</div>
+                                            <div class="actions">
+                                                <a class="reply">Reply</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                            {% if counter|length > 5 %}
+                            <button data-toggle="{{ rowInfo.pID }}" class="mini ui grey button toggle_comments">Show more comments.</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div> -->
         </div>
-        <div class="results"></div>
-    </div>
-    <div class="ui segment">
-        <div class="ui left rail">
-            <div class="ui segment">
-            <h1>Please display bro?</h1>
-            </div>
-        </div>
-    <div class="ui text container">
+    </section>
+    <!-- <div class="ui text container">
         <div class="ui cards">
             {% for post in pInfo %}
             {% set rowInfo = dictFromRow( post ) %}
@@ -111,14 +201,14 @@
                             {% endfor %}
                         </div>
                         {% endfor %}
-                        {% if counter|length > 3 %}
+                        {% if counter|length > 5 %}
                         <button data-toggle="{{ rowInfo.pID }}" class="mini ui grey button toggle_comments">Show more comments.</button>
                         {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
-        </div>
+        </div> -->
     </div>
 
     <div class="ui modal search-results">

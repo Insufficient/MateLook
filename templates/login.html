@@ -1,33 +1,38 @@
 {% include 'header.html' %}
 <body>
     <section class="intro">
-        {% if message %}
-        <div class="ui error message">
-            <div class="header">Whoopsy!</div>
-            <p>{{ message }}</p>
-        </div>
-        {% endif %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="ui error message">
-                <div class="header">Whoopsy!</div>
-                <p>{{ message }}</p>
-            </div>
-            {% endfor %}
-        {% endif %}
-        {% endwith %}
-        <div class="ui fluid container">
+        <div class="ui fluid container login-page">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="ui error message">
+                    <div class="header">Whoopsy!</div>
+                    <p>{{ message }}</p>
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <h1 class="app-name centered">FookMate</h1>
             {% if getSess( ) == None %}
             <form class="ui large form intro-login" action="{{ url_for( 'auth' ) }}" method="POST">
                 <div class="field">
                     <label>zID</label>
-                    <input type="text" name="zID" placeholder="z5555555">
+                    <input type="text" name="zID" placeholder="z5555555" required value="{{ user }}">
                 </div>
                 <div class="field">
                     <label>Password</label>
-                    <input type="password" name="password" placeholder="*****">
+                    <input type="password" name="password" placeholder="*****" required value="{{ pw }}">
+                </div>
+                <div class="field email hidden">
+                    <label>Email</label>
+                    <input type="text" name="email" placeholder="z5555555@student.unsw.edu.au">
+                </div>
+                <div class="field full-name hidden">
+                    <label>Full Name</label>
+                    <input type="text" name="name" placeholder="Alpha Beta">
                 </div>
                 <input class="ui primary button" name="action" type="submit" value="Login">
                 </input>
@@ -39,5 +44,16 @@
         </div>
     </section>
 
+    <script>
+        $( ".secondary" ).on( 'click', function( ) {
+            if( $( '.email' ).is( ":visible" ) ) {
+
+            } else {
+                $( '.email' ).toggle( "500" );
+                $( '.full-name' ).toggle( "500" );
+                event.preventDefault( );
+            }
+        } );
+    </script>
 </body>
 </html>

@@ -7,13 +7,67 @@
     width: 85%;
 }
 
-.intro {
-    height: 100%;
+.ui.grid {
+    margin: 0 !important;
+}
+
+.hero {
+    background-image: url( "bg.jpg" );
+    background-size: cover;
+    padding-top: 10px;
+    min-height: 30%;
+}
+
+.ui.grid.profile {
+    padding-top: 10%;
+}
+
+.page-header {
+    background-color: rgba( 0, 0, 0, 0.05 );
+}
+
+.prompt.search-field {
     width: 100%;
 }
 
+.search-bar {
+    clear: both;
+    display: block;
+    background-color: rgba( 0, 0, 0, 0.05 );
+    height: 35px;
+}
+
+.ui.search.large {
+    height: 35px;
+    font-size: 1.2rem;
+}
+
+.profile-picture {
+    border-radius: 50%;
+    height: 150px;
+    width: 150px;
+    max-width: 100%;
+    float: right;
+}
+
+.centered {
+    text-align: center;
+    margin: 0 auto;
+}
+
+.app-name {
+    font-size: 3rem;
+    padding: 50px;
+}
+
+.intro {
+    padding-top: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .ui.large.form.intro-login {
-    transform: translateY(100%);
     max-width: 450px;
     margin: 0 auto;
 }
@@ -44,4 +98,8 @@
 
 [data-tooltip]:hover:before, [data-tooltip]:hover:after {
     font-size: 0.8em !important;
+}
+
+.hidden {
+    display: none;
 }
