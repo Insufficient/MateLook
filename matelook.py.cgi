@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3.5
 
 # written by andrewt@cse.unsw.edu.au September 2016
 # as a starting point for COMP2041/9041 assignment 2
@@ -7,12 +7,12 @@
 import cgi, cgitb, glob, os
 
 def main():
-    print page_header()
+    print(page_header())
     cgitb.enable()
     users_dir = "dataset-medium"
     parameters = cgi.FieldStorage()
-    print user_page(parameters, users_dir)
-    print page_trailer(parameters)
+    print(user_page(parameters, users_dir))
+    print(page_trailer(parameters))
 
 
 #
@@ -42,7 +42,7 @@ def user_page(parameters, users_dir):
 # HTML placed at the top of every page
 #
 def page_header():
-    return """Content-Type: text/html
+    return """Content-Type: text/html;charset=utf-8
 
 <!DOCTYPE html>
 <html lang="en">

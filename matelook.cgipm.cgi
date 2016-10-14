@@ -49,7 +49,7 @@ sub user_page {
 # HTML placed at the top of every page
 #
 sub page_header {
-    return header,
+    return header(-charset => "utf-8"),
         start_html(-title => 'matelook', -style => "matelook.css"),
         div({-class => "matelook_heading"}, "matelook");
 }
