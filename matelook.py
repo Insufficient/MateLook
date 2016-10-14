@@ -1,12 +1,13 @@
 #!/usr/local/bin/python3.5 -u
 
-from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup, flash
+from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup, flash, send_file
 from collections import defaultdict
 import re, sys, os, glob, jinja2, io
 import sqlite3 as sql
 app = Flask( __name__ )
+#app.config[ 'send_file_max_age_default' ]
 
-users_dir = "static/dataset-large"
+users_dir = "static\dataset-large"
 db = "sql.db"
 con = None
 #
@@ -213,8 +214,10 @@ def showProfPict( zID ):
     u_ToShow = os.path.join( users_dir, username[ 0 ] )
     imgLoc = os.path.join( u_ToShow, "profile.jpg" )
     if not os.path.isfile( imgLoc ):
-        imgLoc = "http://placehold.it/250x250" # Change this to something sensible like a default picture.
-    return redirect( imgLoc )
+        #imgLoc = "http://placehold.it/250x250" # Change this to something sensible like a default picture.
+        imgLoc = os.path.join( users_dir, "default.png" )
+    print( "Image: " + str( imgLoc ) )
+    return send_file( imgLoc, mimetype='image/jpg' )
 
 app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'
 
