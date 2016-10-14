@@ -98,6 +98,62 @@ def viewUsers( user_name=None ):
 
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
+
+"""
+    Create posts/comments/replies
+"""
+@app.route( '/create', methods=[ 'POST' ] )
+def create( ):
+    cType = request.form[ 'type' ]              # Post, Comment or Reply
+    cParent = request.form[ 'parent' ]
+    cMessage = request.form[ 'message' ]
+
+    if not cMessage or not cParent or len( cMessage ) == 0:
+        flash( "Please enter a message." )
+        return render_template( "user.html" )
+
+    if 'Post' in cType:
+        colName = 'zID'
+        # Check if session username is the parent username.
+    elif 'Comment' in cType:
+        colName = 'pID'
+    elif 'Reply' in cType:
+        colName = 'cID'
+    else:
+        flash( "You cannot access that column.")
+        return render_template( "user.html" )
+
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
+    result = cur.fetchone( )
+    if not result:
+        flash( "You cannot make a post/comment/reply to that parent." )
+        return render_template( "user.html" )
+
+    cDate = date.today( )
+    """
+    "pID" TEXT,
+    "zID" TEXT,
+    "message" TEXT,
+    "time" TEXT,
+    "longitude" TEXT,
+    "latitude" TEXT)''' )
+    """
+    if colName == 'zID':                            # New post
+        cur.execute( "INSERT INTO Post VALUES (?,?,?,?,?,?,?)", (   \
+            None, cParent, cMessage, cDate, None, None ) )
+
+    con.commit( )
+    con.close( )
+    flash( "Post made!" )
+    return redirect( url_for( 'viewUsers', user_name=cParent ) )
+
+
+
+"""
+    Search AJAX page
+"""
 @app.route('/search', methods=['POST'] )
 def search( ):
     searchQuery = request.form[ 'search' ]
@@ -207,8 +263,8 @@ def logout( ):
 
 @app.route( '/profile_picture/<zID>' )
 def showProfPict( zID ):
-    username = re.findall( r'z[0-9]{7}', zID )    # Sanitize input
-    if not username:                                    # No user with the username found
+    username = re.findall( r'z[0-9]{7}', zID )                      # Sanitize input
+    if not username:                                                # No user with the username found
         return "<p>Invalid username %s</p>" % escape( zID )
 
     u_ToShow = os.path.join( users_dir, username[ 0 ] )
@@ -438,4 +494,4 @@ def parseDataset( ):
 main( )
 
 if __name__ == "__main__":
-    app.run( debug=True, port=5000, host="0.0.0.0" )
+    app.run( debug=True, port=5000, host="127.0.0.1" ) # 0.0.0.0

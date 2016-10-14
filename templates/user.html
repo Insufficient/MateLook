@@ -61,6 +61,25 @@
     </section>
 
     <section class="content">
+        {% if sessName == username %}
+        <div class="ui text container">
+            <div class="ui cards">
+                <div class="ui raised fluid card create-post" }}">
+                    <div class="content">
+                        <h1>Make post</h1>
+                        <div class="description">
+                            <div class="actions">
+                                <input type="textfield" placeholder="...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="extra-content">
+                        <button class="ui button">Create</button>
+                    </div>
+                </div
+            </div>
+        </div>
+        {% endif %}
         <div class="ui text container">
             <div class="ui cards">
                 {% for post in pInfo %}
@@ -68,10 +87,10 @@
                 <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
                     <div class="content">
                         <div class="right floated author">
-                            <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }}
+                            <!-- <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }} -->
                         </div>
                         <div class="description">
-                            <p>{{ rowInfo.message|doMention|safe|urlize(40, target='_blank') }}</p>
+                            <p>{{ rowInfo.message|doMention|safe|urlize(40) }}</p>
                             <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
                             <div class="actions">
                                 <a class="reply">Reply</a>
@@ -91,7 +110,7 @@
                             {% if counter.append('1') %}{% endif %}
                             <div class="comment" id="comment-{{ rowInfo.cID }}">
                                 <a class="avatar">
-                                    <img src="../profile_picture/{{ row_Info.zID}}">
+                                    <!-- <img src="../profile_picture/{{ row_Info.zID}}"> -->
                                 </a>
                                 <div class="content">
                                     <a href="{{ row_Info.zID }}" class="author">{{ getInfo( row_Info.zID, "full_name" )}}</a>
@@ -109,7 +128,7 @@
                                 <div class="comments minimal replies" id="reply-{{ rowInfo.rID }}">
                                     <div class="comment">
                                         <a class="avatar">
-                                            <img src="../profile_picture/{{ rowInfo_.zID}}">
+                                            <!-- <img src="../profile_picture/{{ rowInfo_.zID}}"> -->
                                         </a>
                                         <div class="content">
                                             <a href="{{ rowInfo_.zID }}" class="author">{{ getInfo( rowInfo_.zID, "full_name" )}}</a>
