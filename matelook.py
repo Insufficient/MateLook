@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.5 -u
 #!/usr/local/bin/python3.5 -u
 
 from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup, flash, send_file
@@ -8,7 +9,7 @@ import datetime
 app = Flask( __name__ )
 #app.config[ 'send_file_max_age_default' ]
 
-users_dir = "static\dataset-large"
+users_dir = "static/dataset-large"
 db = "sql.db"
 con = None
 #
@@ -478,7 +479,7 @@ def parseDataset( ):
 main( )
 
 if __name__ == "__main__":
-    app.run( debug=True, port=5000, host="127.0.0.1" ) # 0.0.0.0
+    app.run( debug=True, port=32031, host="0.0.0.0", threaded=True) # 0.0.0.0
 
 
 """ OLD COMMENTED CODE
