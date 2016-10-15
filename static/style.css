@@ -26,6 +26,23 @@
     background-color: rgba( 0, 0, 0, 0.05 );
 }
 
+.ui.button.action-create {
+    margin: 10px;
+}
+
+.post-area {
+    width: 100%;
+    min-height: 100px;
+}
+
+.post-header {
+    font-size: 1.2rem;
+}
+
+.hidden--force {
+    display: none !important;
+}
+
 .prompt.search-field {
     width: 100%;
 }

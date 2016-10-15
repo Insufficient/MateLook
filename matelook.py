@@ -4,6 +4,7 @@ from flask import Flask, session, escape, request, url_for, redirect, render_tem
 from collections import defaultdict
 import re, sys, os, glob, jinja2, io
 import sqlite3 as sql
+import datetime
 app = Flask( __name__ )
 #app.config[ 'send_file_max_age_default' ]
 
@@ -14,48 +15,14 @@ con = None
 
 @app.route( '/test' )
 def testView( ):
-    return render_template( "error0.html", message="""#YOLOMAN. LOL LLOL OLLOOL OLOL
-    @z5117924\n\n<script>alert(\"LOL\")</script>""" )
-
-@app.route( '/user/<user_name>' )
-def viewUser( user_name=None ):
-
-    if( user_name == None ):     # Show a random user.
-        return "<p>Please enter a username</p>"
-
-    username = re.findall( r'z[0-9]{7}', user_name )    # Sanitize input
-    if not username:                                    # No user with the username found
-        return "<p>Invalid username %s</p>" % escape( user_name )
-
-    u_ToShow = os.path.join( users_dir, username[ 0 ] )
-    u_FileName = os.path.join( u_ToShow, "user.txt" )
-
-    if not os.path.isfile( u_FileName ):
-        return "<p>User does not exist.%s</p>" % escape( user_name )
-
-    with open( u_FileName ) as f:
-        u_Info = defaultdict( )
-        for line in f:
-            line = line.rstrip( )   # Chomp
-            lineInfo = line.split( "=", 1 ) # Split on '='
-            if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
-
-            if lineInfo[ 0 ] == "mates":
-                lineInfo[ 1 ] = re.sub( r'(\[|\])', '', lineInfo[ 1 ] )
-                mates = lineInfo[ 1 ].split( ', ' )
-                mates.pop( )    # Remove last useless element
-
-                u_Info[ lineInfo[ 0 ] ] = mates
-            else:
-                u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
-
-    #print( u_Info );
-    imgLoc = os.path.join( u_ToShow, "profile.jpg" )
-    if not os.path.isfile( imgLoc ):
-        imgLoc = None
-
-
-    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ "z5013363", ] )
+    results = cur.fetchall( )
+    string = [', '.join(w) for w in results]
+    string = '","'.join( string )
+    mates = "(\"{}\")".format( string )
+    return render_template( "error0.html", message=mates )
 
 @app.route( '/users/<user_name>' )
 def viewUsers( user_name=None ):
@@ -78,8 +45,16 @@ def viewUsers( user_name=None ):
         cur.execute( "SELECT * FROM User WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchone( )
         u_Info = result
+
+        cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ username[ 0 ] ] )
+        results = cur.fetchall( )
+        string = [', '.join(w) for w in results]
+        string = '","'.join( string )
+        mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
+        # Get their mates and store it into a string.
         cur = con.cursor( )
-        cur.execute( "SELECT * FROM Post WHERE zID=? ORDER BY time DESC", [ username[ 0 ] ] )
+        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC".format( mates ), [ "%" + username[ 0 ] + "%" ] )
+        # cur.execute( "SELECT * FROM Post WHERE zID IN {} ORDER BY time DESC".format( mates ) )
         result = cur.fetchall( )
         p_Info = result
         cur = con.cursor( )
@@ -95,7 +70,6 @@ def viewUsers( user_name=None ):
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
 
-
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
 
@@ -107,6 +81,7 @@ def create( ):
     cType = request.form[ 'type' ]              # Post, Comment or Reply
     cParent = request.form[ 'parent' ]
     cMessage = request.form[ 'message' ]
+    zID = request.form[ 'zID' ]                 # Person making the post
 
     if not cMessage or not cParent or len( cMessage ) == 0:
         flash( "Please enter a message." )
@@ -117,8 +92,10 @@ def create( ):
         # Check if session username is the parent username.
     elif 'Comment' in cType:
         colName = 'pID'
+        cType = 'Post'
     elif 'Reply' in cType:
         colName = 'cID'
+        cType = 'Comment'
     else:
         flash( "You cannot access that column.")
         return render_template( "user.html" )
@@ -126,27 +103,34 @@ def create( ):
     con = sql.connect( db )
     cur = con.cursor( )
     cur.execute( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
+    con.commit( )
     result = cur.fetchone( )
     if not result:
         flash( "You cannot make a post/comment/reply to that parent." )
         return render_template( "user.html" )
 
-    cDate = date.today( )
-    """
-    "pID" TEXT,
-    "zID" TEXT,
-    "message" TEXT,
-    "time" TEXT,
-    "longitude" TEXT,
-    "latitude" TEXT)''' )
-    """
+    cDate = datetime.datetime.now( )
+    # We need to preserve newlines and etc somehow.
+
     if colName == 'zID':                            # New post
-        cur.execute( "INSERT INTO Post VALUES (?,?,?,?,?,?,?)", (   \
+        cur.execute( "INSERT INTO Post VALUES (?,?,?,?,?,?)", (   \
             None, cParent, cMessage, cDate, None, None ) )
+    elif colName == 'pID':
+        cur.execute( "INSERT INTO Comment VALUES (?,?,?,?,?)", (   \
+            None, cParent, zID, cMessage, cDate ) )
+    elif colName == 'cID':
+        cur = con.cursor( )
+        cur.execute( "SELECT cID FROM Comment WHERE pID = ?", [ cParent ] )
+        result = cur.fetchone( )
+        if not result:
+            flash( "You cannot make a post/comment/reply to that parent." )
+            return render_template( "user.html" )
+        else:
+            cur.execute( "INSERT INTO Reply VALUES (?,?,?,?,?,?)", (   \
+                None, result[ 0 ], cParent, zID, cMessage, cDate ) )
 
     con.commit( )
     con.close( )
-    flash( "Post made!" )
     return redirect( url_for( 'viewUsers', user_name=cParent ) )
 
 
@@ -272,7 +256,6 @@ def showProfPict( zID ):
     if not os.path.isfile( imgLoc ):
         #imgLoc = "http://placehold.it/250x250" # Change this to something sensible like a default picture.
         imgLoc = os.path.join( users_dir, "default.png" )
-    print( "Image: " + str( imgLoc ) )
     return send_file( imgLoc, mimetype='image/jpg' )
 
 app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'
@@ -297,6 +280,7 @@ def getInfo( zID, infoName="*" ):
 
 """ getPost( tID, type )
     tID     - ID of post/comment/reply
+    zID     - zID of user that made this post.
     type    - 0 (post), 1 (comment), 2 (reply)
 """
 def getPost( tID, type="Post" ):
@@ -495,3 +479,47 @@ main( )
 
 if __name__ == "__main__":
     app.run( debug=True, port=5000, host="127.0.0.1" ) # 0.0.0.0
+
+
+""" OLD COMMENTED CODE
+
+@app.route( '/user/<user_name>' )
+def viewUser( user_name=None ):
+
+    if( user_name == None ):
+        return "<p>Please enter a username</p>"
+
+    username = re.findall( r'z[0-9]{7}', user_name )    # Sanitize input
+    if not username:                                    # No user with the username found
+        return "<p>Invalid username %s</p>" % escape( user_name )
+
+    u_ToShow = os.path.join( users_dir, username[ 0 ] )
+    u_FileName = os.path.join( u_ToShow, "user.txt" )
+
+    if not os.path.isfile( u_FileName ):
+        return "<p>User does not exist.%s</p>" % escape( user_name )
+
+    with open( u_FileName ) as f:
+        u_Info = defaultdict( )
+        for line in f:
+            line = line.rstrip( )   # Chomp
+            lineInfo = line.split( "=", 1 ) # Split on '='
+            if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
+
+            if lineInfo[ 0 ] == "mates":
+                lineInfo[ 1 ] = re.sub( r'(\[|\])', '', lineInfo[ 1 ] )
+                mates = lineInfo[ 1 ].split( ', ' )
+                mates.pop( )    # Remove last useless element
+
+                u_Info[ lineInfo[ 0 ] ] = mates
+            else:
+                u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
+
+    #print( u_Info );
+    imgLoc = os.path.join( u_ToShow, "profile.jpg" )
+    if not os.path.isfile( imgLoc ):
+        imgLoc = None
+
+
+    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
+"""

@@ -17,7 +17,7 @@
     <section class="hero">
         <div class="ui fluid container">
             <div class="ui grid profile">
-                <div class="two wide column">
+                <div class="four wide column">
                     <img class="profile-picture" src="../profile_picture/{{ username }}" />
                 </div>
                 <div class="four wide column">
@@ -61,25 +61,26 @@
     </section>
 
     <section class="content">
-        {% if sessName == username %}
-        <div class="ui text container">
+        <div class="ui text container {% if sessName != username %}hidden--force{% endif %}">
             <div class="ui cards">
-                <div class="ui raised fluid card create-post" }}">
+                <div class="ui raised fluid card create-post">
                     <div class="content">
-                        <h1>Make post</h1>
+                        <h1 class="post-header">Make Post</h1>
                         <div class="description">
                             <div class="actions">
-                                <input type="textfield" placeholder="...">
+                                <textarea class="post-area" placeholder="What do your mates want to hear?"></textarea>
                             </div>
                         </div>
                     </div>
                     <div class="extra-content">
-                        <button class="ui button">Create</button>
+                        <div class="actions">
+                            <button class="ui button action-create" data-type="Post" data-parent="{{ username }}">Create</button>
+                        </div>
                     </div>
-                </div
+                </div>
             </div>
         </div>
-        {% endif %}
+
         <div class="ui text container">
             <div class="ui cards">
                 {% for post in pInfo %}
@@ -87,18 +88,18 @@
                 <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
                     <div class="content">
                         <div class="right floated author">
-                            <!-- <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }} -->
+                            <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }}
                         </div>
                         <div class="description">
                             <p>{{ rowInfo.message|doMention|safe|urlize(40) }}</p>
                             <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
                             <div class="actions">
-                                <a class="reply">Reply</a>
+                                <a class="reply" data-type="Comment" data-parent="{{ rowInfo.pID }}">Reply</a>
                             </div>
                         </div>
                     </div>
                     <div class="extra content">
-                        <div class="ui minimal comments">
+                        <div class="ui comments">
                             {% set comments = getPost( rowInfo.pID, 'Comment' ) %}
                             {% if comments|length > 0 %}
                             <h3 class="ui dividing header">Comments</h3>
@@ -119,7 +120,7 @@
                                     </div>
                                     <div class="text">{{ row_Info.message|doMention|safe }}</div>
                                     <div class="actions">
-                                        <a class="reply">Reply</a>
+                                        <a class="reply" data-type="Reply" data-parent="{{ rowInfo.pID }}">Reply</a>
                                     </div>
                                 </div>
                                 {% set replies = getPost( row_Info.cID, 'Reply' ) %}
@@ -136,9 +137,9 @@
                                                 <span class="date">{{ rowInfo_.time|truncate( 10, True, '' ) }}</span>
                                             </div>
                                             <div class="text">{{ rowInfo_.message|doMention|safe }}</div>
-                                            <div class="actions">
+                                            <!-- <div class="actions">
                                                 <a class="reply">Reply</a>
-                                            </div>
+                                            </div> -->
                                         </div>
                                     </div>
                                 </div>
@@ -152,7 +153,7 @@
                     </div>
                 </div>
                 {% endfor %}
-            </div> -->
+            </div>
         </div>
     </section>
     </div>
@@ -174,15 +175,6 @@
 
     <script>
 
-    // var content = [
-    //
-    // {% for post in pInfo %}
-    // {% set rowInfo = dictFromRow( post ) %}
-    // {title: '{{ rowInfo.message }}', action: '{{ rowInfo.pID }}'},
-    // {% endfor %}
-    //   // etc
-    // ];
-
     $( '.ui.modal' ).modal( );
 
     $( '.search-field').keypress( function( e ) {
@@ -197,48 +189,11 @@
                         'onVisible': function( ) {
                             $( '.ui.modal' ).modal( 'refresh' );
                         } } );
-                    // });
                     $( '.ui.modal' ).modal( 'show' );
                 } );
-                // $( '.search-results' ).load( '/search/' + $( '.search-field' ).val( ) , function( ) {
-                //     $( '.menu .item' ).tab( {
-                //         'onVisible': function( ) {
-                //             $( '.ui.modal' ).modal( 'refresh' );
-                //         } } );
-                //     // });
-                //     $( '.ui.modal' ).modal( 'show' );
-                // });
             }
         }
     } );
-
-    // $( '.search-field').keypress( function( e ) {
-    //     console.log( 'Text:' + $( '.search-field' ).val( ) );
-    //     if( event.which == 13 ) {
-    //         if( $( '.search-field' ).val( ).length > 2 ) {
-    //             $( '.search-results' ).load( '/search/' + $( '.search-field' ).val( ) , function( ) {
-    //                 $( '.menu .item' ).tab( {
-    //                     'onVisible': function( ) {
-    //                         $( '.ui.modal' ).modal( 'refresh' );
-    //                     } } );
-    //                 // });
-    //                 $( '.ui.modal' ).modal( 'show' );
-    //             });
-    //         }
-    //     }
-    // } );
-    // $('.ui.search').search({
-    //     source: content,
-    //     maxResults: 3,
-    //     minCharacters: 3,
-    //     onSelect: function(result, response) {
-    //         $('html, body').animate({        // Scroll to Result
-    //             scrollTop: $( "#post-" + result[ 'action' ] ).offset().top
-    //         }, 250 );
-    //         $( ".prompt" ).val( "" );        // Reset field
-    //         return false;
-    //     }
-    // });
 
     $( '.toggle_comments' ).on( 'click', function( ) {
         var pID = $( this ).data( "toggle" )
@@ -254,6 +209,34 @@
         }
         $( "#post-" + pID + " div:nth-child(n+6)").toggle( "500" );
     });
+
+    $( '.action-create' ).on( 'click', function( ) {
+        console.log( "Parent: " + $( '.action-create' ).data( "parent" ) );
+        console.log( "Type: " + $( '.action-create' ).data( "type" ) );
+
+        if( $( '.post-area' ).val( ).length < 5 ) {
+            console.log( "Message is too short!" );
+        } else {
+            $.post(
+                '{{ url_for( "create" ) }}', {
+                    zID: '{{ sessName }}',
+                    message: $( '.post-area' ).val( ),
+                    parent: $( '.action-create' ).data( "parent" ),
+                    type: $( '.action-create' ).data( "type" ) },
+            function( data ) {
+                console.log( "Reponse: " + data );
+                console.log( "Message Sent?" );
+                // location.reload( );
+            } );
+        }
+    } );
+
+    $( '.reply' ).on( 'click', function( ) {
+        var me = $( this );
+        $( '.create-post' ).insertAfter( this ).hide( ).show( 'slow' );
+        $( '.action-create' ).data( "type", me.data( "type" ) ).data( "parent", me.data( "parent" ) );
+        $( '.post-header' ).text( "Reply to " + me.data( "type" ) );
+    } );
     </script>
 
 </body>
