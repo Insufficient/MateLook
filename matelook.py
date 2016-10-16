@@ -14,6 +14,9 @@ db = "sql.db"
 con = None
 #
 
+"""
+    Serve static files
+"""
 @app.route('/static/<path:path>')
 def send_static_file(path):
     return send_from_directory('static', path)
@@ -29,6 +32,9 @@ def testView( ):
     mates = "(\"{}\")".format( string )
     return render_template( "error0.html", message=mates )
 
+"""
+    View a user's profile page.
+"""
 @app.route( '/users/<user_name>' )
 def viewUsers( user_name=None ):
     if( user_name == None ):     # Show a random user.
@@ -116,7 +122,47 @@ def editInfo( ):
     con.commit( )
     return redirect( url_for( 'viewUsers', user_name=zID ) )
 
+@app.route( '/delete', methods=[ 'POST' ] )
+def delete( ):
+    cParent = request.form[ 'parent' ]
+    cType = request.form[ 'type' ]
+    zID = request.form[ 'zID' ]
 
+    if 'Post' in cType:
+        colName = 'pID'
+        # Check if session username is the parent username.
+    elif 'Comment' in cType:
+        colName = 'cID'
+    elif 'Reply' in cType:
+        colName = 'rID'
+    else:
+        return "You cannot access that column."
+
+    if zID != getSess( ):
+        return "You cannot delete this comment/post/reply."
+
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
+    print( "SELECT zID FROM {} WHERE {} = {}".format( cType, colName, cParent ) )
+    results = cur.fetchone( )
+    if not results:
+        return "The comment/post/reply does not exist."
+
+    try:
+        if 'Post' in cType:
+            cur.execute( "DELETE FROM Comment WHERE pID = ?", [ cParent ] )
+            cur.execute( "DELETE FROM Reply WHERE pID = ?", [ cParent ] )
+        if 'Comment' in cType:
+            cur.execute( "DELETE FROM Reply WHERE cID = ?", [ cParent ] )
+            
+        cur.execute( "DELETE FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
+    except sqlite3.Error as e:
+        print( "An error occurred!", e.args[ 0 ] )
+
+    con.commit( )
+    con.close( )
+    return "You have deleted the comment."
 
 """
     Create posts/comments/replies
@@ -218,7 +264,9 @@ def search( ):
         return render_template( "search.html" )
 
 
-
+"""
+    Login page
+"""
 @app.route('/', methods=['GET', 'POST'])
 def auth( ):
     loggedIn = getSess( )
@@ -285,11 +333,17 @@ def auth( ):
     else:
         return render_template( "login.html" )
 
+"""
+    Logout page
+"""
 @app.route( '/logout' )
 def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'auth' ) )
 
+"""
+    Render posts (AJAX)
+"""
 @app.route( '/post', methods=[ 'POST' ] )
 def viewPost( ):
     user_name = request.form[ 'zID' ]
@@ -322,7 +376,9 @@ def viewPost( ):
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
     return render_template( "post.html", pInfo=p_Info )
 
-
+"""
+    Serve profile images statically
+"""
 @app.route( '/profile_picture/<zID>' )
 def showProfPict( zID ):
     username = re.findall( r'z[0-9]{7}', zID )                      # Sanitize input
@@ -563,47 +619,3 @@ main( )
 
 if __name__ == "__main__":
     app.run( debug=True, port=5000, host="0.0.0.0", threaded=True) # 0.0.0.0
-
-
-""" OLD COMMENTED CODE
-
-@app.route( '/user/<user_name>' )
-def viewUser( user_name=None ):
-
-    if( user_name == None ):
-        return "<p>Please enter a username</p>"
-
-    username = re.findall( r'z[0-9]{7}', user_name )    # Sanitize input
-    if not username:                                    # No user with the username found
-        return "<p>Invalid username %s</p>" % escape( user_name )
-
-    u_ToShow = os.path.join( users_dir, username[ 0 ] )
-    u_FileName = os.path.join( u_ToShow, "user.txt" )
-
-    if not os.path.isfile( u_FileName ):
-        return "<p>User does not exist.%s</p>" % escape( user_name )
-
-    with open( u_FileName ) as f:
-        u_Info = defaultdict( )
-        for line in f:
-            line = line.rstrip( )   # Chomp
-            lineInfo = line.split( "=", 1 ) # Split on '='
-            if len( lineInfo ) != 2: break;     # Skip this line if it doesnt have what we need
-
-            if lineInfo[ 0 ] == "mates":
-                lineInfo[ 1 ] = re.sub( r'(\[|\])', '', lineInfo[ 1 ] )
-                mates = lineInfo[ 1 ].split( ', ' )
-                mates.pop( )    # Remove last useless element
-
-                u_Info[ lineInfo[ 0 ] ] = mates
-            else:
-                u_Info[ lineInfo[ 0 ] ] = lineInfo[ 1 ]
-
-    #print( u_Info );
-    imgLoc = os.path.join( u_ToShow, "profile.jpg" )
-    if not os.path.isfile( imgLoc ):
-        imgLoc = None
-
-
-    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, img=imgLoc )
-"""
