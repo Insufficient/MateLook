@@ -75,6 +75,48 @@ def viewUsers( user_name=None ):
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
+"""
+    Edit a user's information
+"""
+@app.route( '/edit', methods=[ 'POST' ] )
+def editInfo( ):
+    if request.method != 'POST':
+        return redirect( url_for( 'auth' ) )
+
+    zID = request.form[ 'zID' ]
+    full_name = request.form[ 'full_name' ]
+    email = request.form[ 'email' ]
+    password = request.form[ 'password' ]
+    birthday = request.form[ 'birthday' ]
+    home_suburb = request.form[ 'home_suburb' ]
+    program = request.form[ 'program' ]
+    blurb = request.form[ 'blurb' ]
+
+    if not zID or not full_name or not email or not password:
+        flash( "zID, full name, email and password are all required." )
+        return redirect( url_for( 'viewUsers', user_name=zID ) )
+
+    if getSess( ) != zID:
+        flash( "You cannot edit another users' information." )
+        return redirect( url_for( 'viewUsers', user_name=zID ) )
+
+
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT zID FROM User WHERE zID=? AND password=?", ( zID, password ) )
+    results = cur.fetchone( )
+    if not results:
+        flash( "You have entered the incorrect password." )
+        return redirect( url_for( 'viewUsers', user_name=zID ) )
+
+    cur.execute( "UPDATE User SET zID=?, full_name=?, email=?, birthday=?,      \
+                    home_suburb=?, program=?, blurb=? WHERE zID=?",             \
+                    ( zID, full_name, email, birthday, home_suburb, program,    \
+                    blurb, zID ) )
+    con.commit( )
+    return redirect( url_for( 'viewUsers', user_name=zID ) )
+
+
 
 """
     Create posts/comments/replies

@@ -80,6 +80,10 @@
     margin-top: 0px;
 }
 
+.edit-info {
+    padding-bottom: 15px;
+}
+
 .intro {
     padding-top: 80px;
     display: flex;

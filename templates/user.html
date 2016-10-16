@@ -29,7 +29,7 @@
                     {% if sessName != username %}
                     <div class="ui button">Add Friend</div>
                     {% else %}
-                    <div class="ui button">Edit Profile</div>
+                    <div class="ui button profile-edit">Edit Profile</div>
                     {% endif %}
                 </div>
                 <div class="four wide column">
@@ -41,6 +41,62 @@
             </div>
         </div>
     </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="ui text container">
+            {% for category, message in messages %}
+            <div class="ui error message">
+                <div class="header">Whoopsy!</div>
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if sessName == username %}
+    <section class="edit-info hidden">
+        <div class="ui text container">
+            <form class="ui form" action="{{ url_for( 'editInfo' ) }}" method="POST">
+                <div class="field">
+                    <label>zID</label>
+                    <input type="text" name="zID" required value="{{ username }}">
+                </div>
+                <div class="field">
+                    <label>Password (please re-enter your password)</label>
+                    <input type="password" name="password" required >
+                </div>
+                <div class="field email">
+                    <label>Email</label>
+                    <input type="text" name="email" required value="{{ uInfo.email }}">
+                </div>
+                <div class="field full-name">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required value="{{ uInfo.full_name }}">
+                </div>
+                <div class="field">
+                    <label>Birthday</label>
+                    <input type="text" name="birthday" value="{{ uInfo.birthday }}">
+                </div>
+                <div class="field">
+                    <label>Program</label>
+                    <input type="text" name="program" value="{{ uInfo.program }}">
+                </div>
+                <div class="field">
+                    <label>Blurb</label>
+                    <input type="text" name="blurb" value="{{ uInfo.blurb }}">
+                </div>
+                <div class="field">
+                    <label>Home Suburb</label>
+                    <input type="text" name="home_suburb" value="{{ uInfo.home_suburb }}">
+                </div>
+                <input class="ui primary blue button profile-save" name="action" type="submit" value="Save">
+                </input>
+            </form>
+        </div>
+    </section>
+    {% endif %}
 
     <section class="search-bar">
         <div class="ui search large">
@@ -152,21 +208,6 @@
         $( "#post-" + pID + " div:nth-child(n+6)").toggle( "500" );
     });
 
-    // $( '.toggle_comments' ).on( 'click', function( ) {
-    //     var pID = $( this ).data( "toggle" )
-    //     var text = $( this ).text( );
-    //     console.log( text );
-    //     if( text == "Show more comments." ) {
-    //         $( this ).text( "Hide comments." );
-    //     } else {
-    //         $( this ).text( "Show more comments." );
-    //         $('html, body').animate({        // Scroll to Result
-    //             scrollTop: $( "#post-" + pID ).offset().top
-    //         }, 500 );
-    //     }
-    //     $( "#post-" + pID + " div:nth-child(n+6)").toggle( "500" );
-    // });
-
     $( '.action-create' ).on( 'click', function( ) {
         console.log( "Parent: " + $( '.action-create' ).data( "parent" ) );
         console.log( "Type: " + $( '.action-create' ).data( "type" ) );
@@ -195,6 +236,10 @@
         $( '.post-header' ).text( "Reply to " + me.data( "type" ) );
     } );
 
+
+    $( '.profile-edit' ).on( 'click', function ( ) {
+        $( '.edit-info' ).slideDown( "slow" );
+    } );
     $( window ).on("scroll", function( ) {
         showPost( );
     });
