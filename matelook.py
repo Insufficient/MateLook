@@ -248,9 +248,37 @@ def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'auth' ) )
 
-@app.route( '/post' )
+@app.route( '/post', methods=[ 'POST' ] )
 def viewPost( ):
-    return redirect( url_for( 'auth' ) )
+    user_name = request.form[ 'zID' ]
+    pageNum = request.form[ 'pageNum' ]
+
+    if( user_name == None ):     # Show a random user.
+        return render_template( "error.html", message="Please enter a username" )
+
+    username = re.findall( r'z[0-9]{7}', user_name )    # Sanitize input
+    if not username:                                    # No user with the username found
+        return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
+
+    p_Info = tuple( )
+    if username[ 0 ] == getInfo( username[ 0 ], 'zID' ): # User exists
+        con = sql.connect( db )
+        con.row_factory = sql.Row
+        cur = con.cursor( )
+        cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ username[ 0 ] ] )
+        results = cur.fetchall( )
+        string = [', '.join(w) for w in results]
+        string = '","'.join( string )
+        mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
+        # Get their mates and store it into a string.
+        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT {}, 10".format( mates, pageNum ), [ "%" + username[ 0 ] + "%" ] )
+        result = cur.fetchall( )
+        p_Info = result
+
+        con.close( )
+    else:
+        return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
+    return render_template( "post.html", pInfo=p_Info )
 
 
 @app.route( '/profile_picture/<zID>' )
