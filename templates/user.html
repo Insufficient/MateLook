@@ -191,12 +191,14 @@
         var scrollHeight = $(document).height();
     	var scrollPosition = $(window).height() + $(window).scrollTop();
     	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+            $( '.post-area' ).append( '<div class="ui active centered inline loader delete_me"></div>' );
             $.post(
                 '{{ url_for( "viewPost" ) }}', {
-                    zID: '{{ sessName }}',
+                    zID: '{{ username }}',
                     pageNum: page_Num
                 },
             function( data ) {
+                $( '.delete_me' ).remove( );
                 $( '.post-area' ).append( data );
                 page_Num += 10;
             } );
