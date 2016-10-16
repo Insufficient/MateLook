@@ -76,6 +76,10 @@
     padding: 50px;
 }
 
+.profile-program {
+    margin-top: 0px;
+}
+
 .intro {
     padding-top: 80px;
     display: flex;

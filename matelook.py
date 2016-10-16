@@ -31,7 +31,6 @@ def testView( ):
 
 @app.route( '/users/<user_name>' )
 def viewUsers( user_name=None ):
-
     if( user_name == None ):     # Show a random user.
         return render_template( "error.html", message="Please enter a username" )
 
@@ -57,16 +56,16 @@ def viewUsers( user_name=None ):
         string = '","'.join( string )
         mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
         # Get their mates and store it into a string.
-        cur = con.cursor( )
-        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC".format( mates ), [ "%" + username[ 0 ] + "%" ] )
+        # cur = con.cursor( )
+        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT 10, 5".format( mates ), [ "%" + username[ 0 ] + "%" ] )
         # cur.execute( "SELECT * FROM Post WHERE zID IN {} ORDER BY time DESC".format( mates ) )
         result = cur.fetchall( )
         p_Info = result
-        cur = con.cursor( )
+        # cur = con.cursor( )
         cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchall( )
         m_Info = result
-        cur = con.cursor( )
+        # cur = con.cursor( )
         cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchall( )
         c_Info = result
@@ -74,7 +73,6 @@ def viewUsers( user_name=None ):
         con.close( )
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
-
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
 
 
@@ -249,6 +247,11 @@ def auth( ):
 def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'auth' ) )
+
+@app.route( '/post' )
+def viewPost( ):
+    return redirect( url_for( 'auth' ) )
+
 
 @app.route( '/profile_picture/<zID>' )
 def showProfPict( zID ):

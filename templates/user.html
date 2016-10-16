@@ -5,7 +5,7 @@
     <section class="page-header">
         <div class="ui fluid container">
             <div class="ui grey secondary menu">
-                <a class="item active">{{ getInfo( sessName, 'full_name') }}</a>
+                <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, 'full_name') }}</a>
                 <div class="right menu">
                     <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
                 </div>
@@ -18,14 +18,26 @@
         <div class="ui fluid container">
             <div class="ui grid profile">
                 <div class="four wide column">
-                    <img class="profile-picture" src="../static/dataset-large/{{ username }}/profile.jpg" />
+                    <img class="profile-picture" src="../profile_picture/{{ username }}" />
                 </div>
                 <div class="four wide column">
                     {% if uInfo %}
-                    <h1>{{ uInfo.full_name }}</h1>
-                    <h2>{{ uInfo.program }}</h2>
+                    <h2>{{ uInfo.full_name }}</h2>
+                    <h3 class="profile-program">{{ uInfo.program }}</h3>
                     <p>{{ uInfo.birthday }}</p>
                     {% endif %}
+                    {% if sessName != username %}
+                    <div class="ui button">Add Friend</div>
+                    {% else %}
+                    <div class="ui button">Edit Profile</div>
+                    {% endif %}
+                </div>
+                <div class="four wide column">
+                    Blurb
+                    <p>
+                    My interests are long walks on the beach and Python programming.
+                    I plan to use what I've learnt COMP2041 to cure the world of all known diseases.
+                    </p>
                 </div>
             </div>
         </div>
@@ -50,7 +62,7 @@
                     <div class="column mate">
                         <div class="image">
                             <a class="ui" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
-                                <img class="mate-picture" src="../static/dataset-large/{{ rowInfo.mateID }}/profile.jpg" />
+                                <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
                             </a>
                         </div>
                     </div>
@@ -81,7 +93,7 @@
             </div>
         </div>
 
-        <div class="ui text container">
+        <div class="ui text container post-area">
             <div class="ui cards">
                 {% for post in pInfo %}
                 {% set rowInfo = dictFromRow( post ) %}
@@ -179,7 +191,7 @@
 
     $( '.search-field').keypress( function( e ) {
         console.log( 'Text:' + $( '.search-field' ).val( ) );
-        if( event.which == 13 ) {
+        if( event.keyCode == 13 ) {
             if( $( '.search-field' ).val( ).length > 2 ) {
                 $.post(
                     '{{ url_for( "search" ) }}', { search: $( '.search-field' ).val( ) },
@@ -237,6 +249,14 @@
         $( '.action-create' ).data( "type", me.data( "type" ) ).data( "parent", me.data( "parent" ) );
         $( '.post-header' ).text( "Reply to " + me.data( "type" ) );
     } );
+
+    $( window ).on("scroll", function( ) {
+    	var scrollHeight = $(document).height();
+    	var scrollPosition = $(window).height() + $(window).scrollTop();
+    	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+    	    alert( "Hello" );
+    	}
+    });
     </script>
 
 </body>
