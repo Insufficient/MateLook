@@ -52,6 +52,10 @@
     background-color: rgba( 0, 0, 0, 0.05 );
 }
 
+.actions a:not(:first-child) {
+    padding-left: 15px;
+}
+
 .ui.search.large {
     font-size: 1.2rem;
 }

@@ -238,13 +238,25 @@
         var me = $( this );
         $( '.create-post' ).insertAfter( this ).hide( ).show( 'slow' );
         $( '.action-create' ).data( "type", me.data( "type" ) ).data( "parent", me.data( "parent" ) );
-        $( '.post-header' ).text( "Reply to " + me.data( "type" ) );
+        $( '.post-header' ).text( "Respond as " + me.data( "type" ) );
     } );
 
+    $( document ).on( 'dblclick', '.delete', function( ) {
+        $.post(
+            '{{ url_for( "delete" ) }}', {
+                zID: '{{ sessName }}',
+                parent: $( this ).data( "parent" ),
+                type: $( this ).data( "type" ) },
+        function( data ) {
+            alert( data );
+            location.reload( );   
+        } );
+    } );
 
     $( '.profile-edit' ).on( 'click', function ( ) {
         $( '.edit-info' ).slideToggle( "slow" );
     } );
+
     $( window ).on("scroll", function( ) {
         showPost( );
     });

@@ -3,13 +3,17 @@
 <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
     <div class="content">
         <div class="right floated author">
-            <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ username }}
+            <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}">
         </div>
         <div class="description">
             <p>{{ rowInfo.message|doMention|safe|urlize(40) }}</p>
             <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
             <div class="actions">
                 <a class="reply" data-type="Comment" data-parent="{{ rowInfo.pID }}">Reply</a>
+                {% if rowInfo.zID == getSess( ) %}
+                <a class="edit" data-type="Post" data-parent="{{ rowInfo.pID }}">Edit</a>
+                <a class="delete" data-parent="{{ rowInfo.pID }}" data-type="Post" data-tooltip="Double-Click">Delete</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -26,7 +30,7 @@
             {% if counter.append('1') %}{% endif %}
             <div class="comment" id="comment-{{ rowInfo.cID }}">
                 <a class="avatar">
-                    <!-- <img src="../profile_picture/{{ row_Info.zID}}"> -->
+                    <img src="../profile_picture/{{ row_Info.zID}}">
                 </a>
                 <div class="content">
                     <a href="{{ row_Info.zID }}" class="author">{{ getInfo( row_Info.zID, "full_name" )}}</a>
@@ -36,6 +40,10 @@
                     <div class="text">{{ row_Info.message|doMention|safe }}</div>
                     <div class="actions">
                         <a class="reply" data-type="Reply" data-parent="{{ rowInfo.pID }}">Reply</a>
+                        {% if row_Info.zID == getSess( ) %}
+                        <a class="edit" data-parent="{{ row_Info.cID }}">Edit</a>
+                        <a class="delete" data-type="Comment" data-parent="{{ row_Info.cID }}" data-tooltip="Double-Click">Delete</a>
+                        {% endif %}
                     </div>
                 </div>
                 {% set replies = getPost( row_Info.cID, 'Reply' ) %}
@@ -44,7 +52,7 @@
                 <div class="comments minimal replies" id="reply-{{ rowInfo.rID }}">
                     <div class="comment">
                         <a class="avatar">
-                            <!-- <img src="../profile_picture/{{ rowInfo_.zID}}"> -->
+                            <img src="../profile_picture/{{ rowInfo_.zID}}">
                         </a>
                         <div class="content">
                             <a href="{{ rowInfo_.zID }}" class="author">{{ getInfo( rowInfo_.zID, "full_name" )}}</a>
@@ -52,9 +60,12 @@
                                 <span class="date">{{ rowInfo_.time|truncate( 10, True, '' ) }}</span>
                             </div>
                             <div class="text">{{ rowInfo_.message|doMention|safe }}</div>
-                            <!-- <div class="actions">
-                                <a class="reply">Reply</a>
-                            </div> -->
+                            <div class="actions">
+                                {% if rowInfo_.zID == getSess( ) %}
+                                <a class="edit" data-parent="{{ rowInfo_.rID }}">Edit</a>
+                                <a class="delete" data-type="Reply" data-parent="{{ rowInfo_.rID }}" data-tooltip="Double-Click">Delete</a>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
