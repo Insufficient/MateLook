@@ -18,7 +18,7 @@
         <div class="ui fluid container">
             <div class="ui grid profile">
                 <div class="four wide column">
-                    <img class="profile-picture" src="../profile_picture/{{ username }}" />
+                    <img class="profile-picture" src="../static/dataset-large/{{ username }}/profile.jpg" />
                 </div>
                 <div class="four wide column">
                     {% if uInfo %}
@@ -50,7 +50,7 @@
                     <div class="column mate">
                         <div class="image">
                             <a class="ui" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
-                                <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
+                                <img class="mate-picture" src="../static/dataset-large/{{ rowInfo.mateID }}/profile.jpg" />
                             </a>
                         </div>
                     </div>

@@ -14,6 +14,10 @@ db = "sql.db"
 con = None
 #
 
+@app.route('/static/<path:path>')
+def send_static_file(path):
+    return send_from_directory('static', path)
+
 @app.route( '/test' )
 def testView( ):
     con = sql.connect( db )

@@ -12,7 +12,6 @@
 }
 
 .hero {
-    background-image: url( "bg.jpg" );
     background-size: cover;
     padding-top: 10px;
     min-height: 30%;
