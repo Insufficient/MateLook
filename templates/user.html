@@ -61,7 +61,7 @@
             <form class="ui form" action="{{ url_for( 'editInfo' ) }}" method="POST">
                 <div class="field">
                     <label>zID</label>
-                    <input type="text" name="zID" required value="{{ username }}">
+                    <input type="text" name="zID" required disabled value="{{ username }}">
                 </div>
                 <div class="field">
                     <label>Password (please re-enter your password)</label>
@@ -99,10 +99,14 @@
     {% endif %}
 
     <section class="search-bar">
-        <div class="ui search large">
-            <div class="ui icon input">
-                <input class="prompt search-field" type="text" placeholder="Search">
-                <i class="search icon"></i>
+        <div class="ui fluid container">
+            <div class="ui centered grid">
+                <div class="ui search large eight wide column">
+                    <div class="ui icon input">
+                        <input class="prompt search-field" type="text" placeholder="Search">
+                        <i class="search icon"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -194,6 +198,7 @@
     } );
 
     $( document ).on( 'click', '.toggle_comments', function( ) {
+        console.log( "Test" );
         var pID = $( this ).data( "toggle" )
         var text = $( this ).text( );
         console.log( text );
@@ -229,7 +234,7 @@
         }
     } );
 
-    $( '.reply' ).on( 'click', function( ) {
+    $( document ).on( 'click', '.reply', function( ) {
         var me = $( this );
         $( '.create-post' ).insertAfter( this ).hide( ).show( 'slow' );
         $( '.action-create' ).data( "type", me.data( "type" ) ).data( "parent", me.data( "parent" ) );
@@ -238,7 +243,7 @@
 
 
     $( '.profile-edit' ).on( 'click', function ( ) {
-        $( '.edit-info' ).slideDown( "slow" );
+        $( '.edit-info' ).slideToggle( "slow" );
     } );
     $( window ).on("scroll", function( ) {
         showPost( );
