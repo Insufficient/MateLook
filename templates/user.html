@@ -35,8 +35,7 @@
                 <div class="four wide column">
                     Blurb
                     <p>
-                    My interests are long walks on the beach and Python programming.
-                    I plan to use what I've learnt COMP2041 to cure the world of all known diseases.
+                    {{ uInfo.blurb }}
                     </p>
                 </div>
             </div>
@@ -93,8 +92,8 @@
             </div>
         </div>
 
-        <div class="ui text container post-area">
-            <div class="ui cards">
+        <div class="ui text container">
+            <div class="ui cards posts">
 
             </div>
         </div>
@@ -206,7 +205,7 @@
         var scrollHeight = $(document).height();
     	var scrollPosition = $(window).height() + $(window).scrollTop();
     	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
-            $( '.post-area' ).append( '<div class="ui active centered inline loader delete_me"></div>' );
+            $( '.posts' ).append( '<div class="ui active centered inline loader delete_me"></div>' );
             $.post(
                 '{{ url_for( "viewPost" ) }}', {
                     zID: '{{ username }}',
@@ -214,7 +213,7 @@
                 },
             function( data ) {
                 $( '.delete_me' ).remove( );
-                $( '.post-area' ).append( data );
+                $( '.posts' ).append( data );
                 page_Num += 10;
             } );
     	}

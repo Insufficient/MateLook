@@ -339,6 +339,12 @@ def getPost( tID, type="Post" ):
 
 def doMention( longString ):
     longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', str( jinja2.escape( longString ) ) )
+    matches = re.findall( r'>@(z[0-9]{7})<', longString )
+    for match in matches:
+        swapFrom = ">@{}<".format( match )
+        swapInto = ">@{}<".format( getInfo( match, "full_name" ) )
+        longString = re.sub( swapFrom, swapInto, longString )
+
     longString = re.sub( r'\\n', r'<br/>', longString )
     return Markup( longString )
 
