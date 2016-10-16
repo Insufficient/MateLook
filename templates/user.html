@@ -138,7 +138,7 @@
         }
     } );
 
-    $( '.toggle_comments' ).on( 'click', function( ) {
+    $( document ).on( 'click', '.toggle_comments', function( ) {
         var pID = $( this ).data( "toggle" )
         var text = $( this ).text( );
         console.log( text );
@@ -152,6 +152,21 @@
         }
         $( "#post-" + pID + " div:nth-child(n+6)").toggle( "500" );
     });
+
+    // $( '.toggle_comments' ).on( 'click', function( ) {
+    //     var pID = $( this ).data( "toggle" )
+    //     var text = $( this ).text( );
+    //     console.log( text );
+    //     if( text == "Show more comments." ) {
+    //         $( this ).text( "Hide comments." );
+    //     } else {
+    //         $( this ).text( "Show more comments." );
+    //         $('html, body').animate({        // Scroll to Result
+    //             scrollTop: $( "#post-" + pID ).offset().top
+    //         }, 500 );
+    //     }
+    //     $( "#post-" + pID + " div:nth-child(n+6)").toggle( "500" );
+    // });
 
     $( '.action-create' ).on( 'click', function( ) {
         console.log( "Parent: " + $( '.action-create' ).data( "parent" ) );
