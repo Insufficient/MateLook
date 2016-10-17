@@ -1,36 +1,74 @@
 #!/usr/bin/env python3.5 -u
 #!/usr/local/bin/python3.5 -u
 
-from flask import Flask, session, escape, request, url_for, redirect, render_template, Markup, flash, send_file
+from flask import Flask, session, escape, request, url_for, redirect,           \
+                    render_template, Markup, flash, send_file
 from collections import defaultdict
+from werkzeug.utils import secure_filename
 import re, sys, os, glob, jinja2, io
 import sqlite3 as sql
 import datetime
-app = Flask( __name__ )
-#app.config[ 'send_file_max_age_default' ]
+
+ALLOWED_EXTENSIONS = set( ['png', 'jpg', 'jpeg' ] )
 
 users_dir = "static/dataset-large"
 db = "sql.db"
-con = None
-#
+
+app = Flask( __name__ )
+# app.config[ 'MAX_CONTENT_LENGTH' ] = 1 * 1024 * 1024        # 512 KB
+
+
+"""
+    Attribution to http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
+"""
+def allowed_file( filename ):
+    return '.' in filename and \
+           filename.rsplit( '.', 1 )[ 1 ] in ALLOWED_EXTENSIONS
+
+@app.route( '/uploadPicture', methods=['GET', 'POST'] )
+def uploadPic( ):
+    if request.method == 'POST':
+        file = request.files['file']
+        zID = request.form[ 'zID' ]
+        cType = request.form[ 'type' ]
+
+        if file and allowed_file(file.filename):
+            if 'pBg' in cType:
+                filename = secure_filename( 'bg.jpg' )
+            elif 'pPic' in cType:
+                filename = secure_filename( 'profile.jpg' )
+            else:
+                return render_template( 'error0.html', message="Invalid type." )
+
+            userDir = os.path.join( users_dir, zID )
+            if not os.path.exists( userDir ):                                   # Create a user directory if it doesnt exist.
+                os.makedirs( userDir )
+
+            file.save( os.path.join( userDir, filename ) )
+            return redirect( url_for( 'auth' ) )
+
+        return render_template( 'error0.html', message="Please specify an image with jpg/jpeg/png extension." )
+
+    return render_template( 'error0.html', message="Please specify an image." )
+
 
 """
     Serve static files
 """
-@app.route('/static/<path:path>')
+@app.route( '/static/<path:path>' )
 def send_static_file(path):
-    return send_from_directory('static', path)
+    return send_from_directory( 'static', path )
 
-@app.route( '/test' )
-def testView( ):
-    con = sql.connect( db )
-    cur = con.cursor( )
-    cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ "z5013363", ] )
-    results = cur.fetchall( )
-    string = [', '.join(w) for w in results]
-    string = '","'.join( string )
-    mates = "(\"{}\")".format( string )
-    return render_template( "error0.html", message=mates )
+# @app.route( '/test' )
+# def testView( ):
+#     con = sql.connect( db )
+#     cur = con.cursor( )
+#     cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ "z5013363", ] )
+#     results = cur.fetchall( )
+#     string = [', '.join(w) for w in results]
+#     string = '","'.join( string )
+#     mates = "(\"{}\")".format( string )
+#     return render_template( "error0.html", message=mates )
 
 """
     View a user's profile page.
@@ -155,7 +193,7 @@ def delete( ):
             cur.execute( "DELETE FROM Reply WHERE pID = ?", [ cParent ] )
         if 'Comment' in cType:
             cur.execute( "DELETE FROM Reply WHERE cID = ?", [ cParent ] )
-            
+
         cur.execute( "DELETE FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
     except sqlite3.Error as e:
         print( "An error occurred!", e.args[ 0 ] )
@@ -388,8 +426,19 @@ def showProfPict( zID ):
     u_ToShow = os.path.join( users_dir, username[ 0 ] )
     imgLoc = os.path.join( u_ToShow, "profile.jpg" )
     if not os.path.isfile( imgLoc ):
-        #imgLoc = "http://placehold.it/250x250" # Change this to something sensible like a default picture.
         imgLoc = os.path.join( users_dir, "default.png" )
+    return send_file( imgLoc, mimetype='image/jpg' )
+
+@app.route( '/profile_bg/<zID>' )
+def showProfBg( zID ):
+    username = re.findall( r'z[0-9]{7}', zID )                      # Sanitize input
+    if not username:                                                # No user with the username found
+        return "<p>Invalid username %s</p>" % escape( zID )
+
+    u_ToShow = os.path.join( users_dir, username[ 0 ] )
+    imgLoc = os.path.join( u_ToShow, "bg.jpg" )
+    if not os.path.isfile( imgLoc ):
+        imgLoc = os.path.join( users_dir, "default_bg.png" )
     return send_file( imgLoc, mimetype='image/jpg' )
 
 app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'

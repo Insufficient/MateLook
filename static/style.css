@@ -13,8 +13,13 @@
 
 .hero {
     background-size: cover;
-    padding-top: 10px;
+    padding-top: 15px;
+    padding-top: 15px;
     min-height: 30%;
+}
+
+.search > .ui.icon.input {
+    width: 100%;
 }
 
 .ui.grid.profile {
@@ -46,10 +51,17 @@
     width: 100%;
 }
 
+.mates {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
 .search-bar {
     clear: both;
     display: block;
-    background-color: rgba( 0, 0, 0, 0.05 );
+    background-color: #E0E0E0;
+    border-top: 1px solid rgba( 0,0,0,0.1);
+    border-bottom: 1px solid rgba( 0,0,0,0.1);
 }
 
 .actions a:not(:first-child) {
@@ -84,6 +96,7 @@
 
 .edit-info {
     padding-bottom: 15px;
+    padding-top: 15px;
 }
 
 .intro {

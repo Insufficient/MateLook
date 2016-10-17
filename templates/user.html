@@ -14,7 +14,7 @@
     </section>
     {% endif %}
 
-    <section class="hero">
+    <section class="hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
         <div class="ui fluid container">
             <div class="ui grid profile">
                 <div class="four wide column">
@@ -40,6 +40,7 @@
                 </div>
             </div>
         </div>
+
     </section>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -58,10 +59,11 @@
     {% if sessName == username %}
     <section class="edit-info hidden">
         <div class="ui text container">
+            <h1>Profile Information</h1>
             <form class="ui form" action="{{ url_for( 'editInfo' ) }}" method="POST">
                 <div class="field">
                     <label>zID</label>
-                    <input type="text" name="zID" required disabled value="{{ username }}">
+                    <input type="text" name="zID" required readonly="readonly" value="{{ username }}">
                 </div>
                 <div class="field">
                     <label>Password (please re-enter your password)</label>
@@ -94,6 +96,26 @@
                 <input class="ui primary blue button profile-save" name="action" type="submit" value="Save">
                 </input>
             </form>
+            <h1>Profile Picture</h1>
+            <form class="ui form" action="{{ url_for( 'uploadPic' ) }}" method="POST" enctype=multipart/form-data>
+                <input type=file name=file>
+                <input type="text" name="zID" hidden value="{{ username }}">
+                <input type="text" name="type" hidden value="pPic">
+                <p>Supported file extensions: jpg/jpeg/png</p>
+                <p>Maximum file size: 1MB (1024 KB)</p>
+                <input class="ui primary blue button" type="submit" value="Upload">
+                </input>
+            </form>
+            <h1>Profile Background</h1>
+            <form class="ui form" action="{{ url_for( 'uploadPic' ) }}" method="POST" enctype=multipart/form-data>
+                <input type=file name=file>
+                <input type="text" name="zID" hidden value="{{ username }}">
+                <input type="text" name="type" hidden value="pBg">
+                <p>Supported file extensions: jpg/jpeg/png</p>
+                <p>Maximum file size: 1MB (1024 KB)</p>
+                <input class="ui primary blue button" type="submit" value="Upload">
+                </input>
+            </form>
         </div>
     </section>
     {% endif %}
@@ -101,7 +123,7 @@
     <section class="search-bar">
         <div class="ui fluid container">
             <div class="ui centered grid">
-                <div class="ui search large eight wide column">
+                <div class="ui search large ten wide column">
                     <div class="ui icon input">
                         <input class="prompt search-field" type="text" placeholder="Search">
                         <i class="search icon"></i>
@@ -153,7 +175,7 @@
         </div>
 
         <div class="ui text container">
-            <div class="ui cards posts">
+            <div class="ui cards posts" id="post_area">
 
             </div>
         </div>
@@ -162,7 +184,6 @@
 
     <div class="ui modal search-results">
     </div>
-</div>
 
     {% if username == getSess( ) %}
         {% if uInfo.courses %}
@@ -174,6 +195,10 @@
     {% endif %}
     <textarea>{{ uInfo|string }}</textarea>
     <textarea>{{ pInfo|string }}</textarea>
+
+    <section class="footer" id="footer">
+
+    </section>
 
     <script>
     var page_Num = 0;
@@ -249,7 +274,7 @@
                 type: $( this ).data( "type" ) },
         function( data ) {
             alert( data );
-            location.reload( );   
+            location.reload( );
         } );
     } );
 
