@@ -33,7 +33,6 @@ def uploadPic( ):
         if request.files:
             file = request.files[ 'file' ]
 
-        print( "Before DELETE" )
         if 'action' in request.form and request.form[ 'action' ] == 'Delete Current Picture':
             user = getSess( )
             if user != None:
