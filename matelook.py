@@ -28,9 +28,33 @@ def allowed_file( filename ):
 @app.route( '/uploadPicture', methods=['GET', 'POST'] )
 def uploadPic( ):
     if request.method == 'POST':
-        file = request.files['file']
         zID = request.form[ 'zID' ]
         cType = request.form[ 'type' ]
+        if request.files:
+            file = request.files[ 'file' ]
+
+        print( "Before DELETE" )
+        if 'action' in request.form and request.form[ 'action' ] == 'Delete Current Picture':
+            user = getSess( )
+            if user != None:
+                userDir = os.path.join( users_dir, user )
+                if not os.path.exists( userDir ):                                   # Create a user directory if it doesnt exist.
+                    os.makedirs( userDir )
+
+                if 'pBg' in cType:
+                    filename = 'bg.jpg'
+                elif 'pPic' in cType:
+                    filename = 'profile.jpg'
+                else:
+                    return render_template( 'error0.html', message="Invalid type." )
+
+                if not os.path.isfile( os.path.join( userDir, filename ) ):
+                    return render_template( 'error0.html', message="You did not have a picture." )
+
+                os.remove( os.path.join( userDir, filename ) )
+                return redirect( url_for( 'auth' ) )
+
+            return render_template( 'error0.html', message="You cannot delete your profile picture without being logged in." )
 
         if file and allowed_file(file.filename):
             if 'pBg' in cType:
@@ -49,8 +73,7 @@ def uploadPic( ):
 
         return render_template( 'error0.html', message="Please specify an image with jpg/jpeg/png extension." )
 
-    return render_template( 'error0.html', message="Please specify an image." )
-
+    return render_template( 'error0.html', message="Please specify an image with jpg/jpeg/png extension." )
 
 """
     Serve static files
@@ -118,6 +141,9 @@ def viewUsers( user_name=None ):
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
+
+# Sneaky
+# SELECT zID, courseID FROM Course group by courseID having COUNT(courseID) > 1
 
 """
     Edit a user's information

@@ -1,6 +1,9 @@
 {% include 'header.html' %}
 <body>
+    <!-- Check if person is a mate! -->
     {% set sessName = getSess( ) %}
+    {% if uInfo.private != 1 or sessName == username %}
+
     {% if sessName %}
     <section class="page-header">
         <div class="ui fluid container">
@@ -104,7 +107,7 @@
                 <p>Supported file extensions: jpg/jpeg/png</p>
                 <p>Maximum file size: 1MB (1024 KB)</p>
                 <input class="ui primary blue button" type="submit" value="Upload">
-                </input>
+                <input class="ui primary red button" name="action" type="submit" value="Delete Current Picture">
             </form>
             <h1>Profile Background</h1>
             <form class="ui form" action="{{ url_for( 'uploadPic' ) }}" method="POST" enctype=multipart/form-data>
@@ -114,7 +117,7 @@
                 <p>Supported file extensions: jpg/jpeg/png</p>
                 <p>Maximum file size: 1MB (1024 KB)</p>
                 <input class="ui primary blue button" type="submit" value="Upload">
-                </input>
+                <input class="ui primary red button" name="action" type="submit" value="Delete Current Picture">
             </form>
         </div>
     </section>
@@ -306,6 +309,8 @@
     	}
     }
     </script>
-
+    {% else %}
+        <h1>This profile is private. ;[ </h1>
+    {% endif %}
 </body>
 </html>
