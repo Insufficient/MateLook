@@ -5,9 +5,11 @@ from flask import Flask, session, escape, request, url_for, redirect,           
                     render_template, Markup, flash, send_file
 from collections import defaultdict
 from werkzeug.utils import secure_filename
+from lxml.html.clean import clean_html
 import re, sys, os, glob, jinja2, io
 import sqlite3 as sql
 import datetime
+import logging
 
 ALLOWED_EXTENSIONS = set( ['png', 'jpg', 'jpeg' ] )
 
@@ -116,25 +118,25 @@ def viewUsers( user_name=None ):
         result = cur.fetchone( )
         u_Info = result
 
-        cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ username[ 0 ] ] )
-        results = cur.fetchall( )
-        string = [', '.join(w) for w in results]
-        string = '","'.join( string )
-        mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
-        # Get their mates and store it into a string.
-        # cur = con.cursor( )
-        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT 10, 5".format( mates ), [ "%" + username[ 0 ] + "%" ] )
-        # cur.execute( "SELECT * FROM Post WHERE zID IN {} ORDER BY time DESC".format( mates ) )
-        result = cur.fetchall( )
-        p_Info = result
-        # cur = con.cursor( )
+        # cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ username[ 0 ] ] )
+        # results = cur.fetchall( )
+        # string = [', '.join(w) for w in results]
+        # string = '","'.join( string )
+        # mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
+        # # Get their mates and store it into a string.
+        # # cur = con.cursor( )
+        # cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT 10, 5".format( mates ), [ "%" + username[ 0 ] + "%" ] )
+        # # cur.execute( "SELECT * FROM Post WHERE zID IN {} ORDER BY time DESC".format( mates ) )
+        # result = cur.fetchall( )
+        # p_Info = result
+        # # cur = con.cursor( )
         cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchall( )
         m_Info = result
         # cur = con.cursor( )
-        cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ username[ 0 ] ] )
-        result = cur.fetchall( )
-        c_Info = result
+        # cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ username[ 0 ] ] )
+        # result = cur.fetchall( )
+        # c_Info = result
 
         con.close( )
     else:
@@ -243,6 +245,7 @@ def create( ):
 
     if 'Post' in cType:
         colName = 'zID'
+        cType = 'User'
         # Check if session username is the parent username.
     elif 'Comment' in cType:
         colName = 'pID'
@@ -257,13 +260,16 @@ def create( ):
     con = sql.connect( db )
     cur = con.cursor( )
     cur.execute( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
+    print( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName, cParent ) )
     con.commit( )
     result = cur.fetchone( )
+
     if not result:
         flash( "You cannot make a post/comment/reply to that parent." )
         return render_template( "user.html" )
 
     cDate = datetime.datetime.now( )
+    cMessage = cMessage.replace( '\n', '\\n' )
     # We need to preserve newlines and etc somehow.
 
     if colName == 'zID':                            # New post
@@ -397,6 +403,32 @@ def auth( ):
         return render_template( "login.html" )
 
 """
+    Add/Remove mates
+"""
+@app.route( '/mate', methods=[ 'POST' ] )
+def mate( ):
+    zID = request.form[ 'zID' ]
+    mID = request.form[ 'mID' ]
+
+    zUser = re.findall( r'z[0-9]{7}', zID )   # Sanitize input
+    mUser = re.findall( r'z[0-9]{7}', mID )   # Sanitize input
+    if not zUser or not mUser:                      # No user with the username found
+        return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
+
+    con = sql.connect( db )
+    cur = con.cursor( )
+    if isMate( zUser[ 0 ], mUser[ 0 ] ):  # Already mates, so remove them.
+        cur.execute( "DELETE FROM Mate WHERE zID=? AND mateID=?", ( zUser[ 0 ], mUser[ 0 ] ) )
+        con.commit( )
+        con.close( )
+        return "Mate has been deleted."
+    else:
+        cur.execute( "INSERT INTO Mate VALUES (?,?)", ( zUser[ 0 ], mUser[ 0 ] ) )
+        con.commit( )
+        con.close( )
+        return "Mate has been added."
+
+"""
     Logout page
 """
 @app.route( '/logout' )
@@ -430,7 +462,7 @@ def viewPost( ):
         string = '","'.join( string )
         mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
         # Get their mates and store it into a string.
-        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT {}, 10".format( mates, pageNum ), [ "%" + username[ 0 ] + "%" ] )
+        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT {}, 5".format( mates, pageNum ), [ "%" + username[ 0 ] + "%" ] )
         result = cur.fetchall( )
         p_Info = result
 
@@ -467,13 +499,38 @@ def showProfBg( zID ):
     return send_file( imgLoc, mimetype='image/jpg' )
 
 app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'
-
+""" getSess( )
+ => returns the username of the session if any.
+"""
 def getSess( ):
     if 'username' in session:
         return session[ 'username' ]
     else:
         return None
 
+
+""" isMate( zID, tID )
+    zID     - user
+    tID     - zID of target user
+ => return 0 if they are not mates, 1 if they are.
+"""
+def isMate( zID, tID ):
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT zID FROM Mate WHERE zID = ? AND mateID=?", ( zID, tID ) )
+    resultOne = cur.fetchone( )
+    cur.execute( "SELECT zID FROM Mate WHERE zID = ? AND mateID=?", ( tID, zID ) )
+    resultTwo = cur.fetchone( )
+    con.close( )
+    if not resultOne and not resultTwo:
+        return 0
+    else:
+        return 1
+
+""" getInfo( zID, infoName )
+    zID         - zID of user  to be searched
+    infoName    - the columns to retrieve.
+"""
 def getInfo( zID, infoName="*" ):
     con = sql.connect( db )
     cur = con.cursor( )
@@ -510,14 +567,18 @@ def getPost( tID, type="Post" ):
     return result
 
 def doMention( longString ):
-    longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', str( jinja2.escape( longString ) ) )
+    if not longString:
+        return Markup( "None" )
+    # longString = re.sub( r'\n', '<br/>', str( longString ), flags=re.DEBUG )
+    longString = longString.replace( r'\n', '<br>' )
+    longString = longString.replace( r'\\n', '<br>' )
+    longString = clean_html( str( longString ) )
+    longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', longString )
     matches = re.findall( r'>@(z[0-9]{7})<', longString )
     for match in matches:
         swapFrom = ">@{}<".format( match )
         swapInto = ">@{}<".format( getInfo( match, "full_name" ) )
         longString = re.sub( swapFrom, swapInto, longString )
-
-    longString = re.sub( r'\\n', r'<br/>', longString )
     return Markup( longString )
 
 # Credits to bbengfort from StackOverflow.
@@ -531,10 +592,13 @@ def main( ):
     app.jinja_env.globals.update( getSess=getSess )
     app.jinja_env.globals.update( dictFromRow=dictFromRow )
     app.jinja_env.globals.update( getPost=getPost )
+    app.jinja_env.globals.update( isMate=isMate )
     app.jinja_env.filters['doMention'] = doMention
 
+    logger = logging.getLogger( __name__ )
+    logging.basicConfig( filename='hello.log', level=logging.DEBUG)
 
-    global con
+
     if os.path.isfile( db ): return
     # We don't need to recreate the database if it already exists.
 

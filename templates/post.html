@@ -6,7 +6,7 @@
             <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}">
         </div>
         <div class="description">
-            <p>{{ rowInfo.message|doMention|safe|urlize(40) }}</p>
+            <p>{{ rowInfo.message|doMention|safe|urlize( 80 ) }}</p>
             <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
             <div class="actions">
                 <a class="reply" data-type="Comment" data-parent="{{ rowInfo.pID }}">Reply</a>

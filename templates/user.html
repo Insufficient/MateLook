@@ -3,7 +3,6 @@
     <!-- Check if person is a mate! -->
     {% set sessName = getSess( ) %}
     {% if uInfo.private != 1 or sessName == username %}
-
     {% if sessName %}
     <section class="page-header">
         <div class="ui fluid container">
@@ -29,17 +28,16 @@
                     <h3 class="profile-program">{{ uInfo.program }}</h3>
                     <p>{{ uInfo.birthday }}</p>
                     {% endif %}
-                    {% if sessName != username %}
-                    <div class="ui button">Add Friend</div>
-                    {% else %}
+                    {% if sessName == username %}
                     <div class="ui button profile-edit">Edit Profile</div>
+                    {% elif sessName != None and ( isMate( uInfo.zID, sessName ) == 1 or isMate( sessName, uInfo.zID ) == 1 )%}
+                    <div class="ui button mate-action">Remove Mate</div>
+                    {% else %}
+                    <div class="ui button mate-action">Add Mate</div>
                     {% endif %}
                 </div>
                 <div class="four wide column">
-                    Blurb
-                    <p>
-                    {{ uInfo.blurb }}
-                    </p>
+                    {{ uInfo.blurb|doMention|safe }}
                 </div>
             </div>
         </div>
@@ -281,6 +279,17 @@
         } );
     } );
 
+    $( '.mate-action' ).on( 'click', function( ) {
+        $.post(
+            '{{ url_for( "mate" ) }}', {
+                zID: '{{ sessName }}',
+                mID: '{{ uInfo.zID }}' },
+        function( data ) {
+            alert( data );
+            location.reload( );
+        } );
+    } );
+
     $( '.profile-edit' ).on( 'click', function ( ) {
         $( '.edit-info' ).slideToggle( "slow" );
     } );
@@ -304,7 +313,7 @@
             function( data ) {
                 $( '.delete_me' ).remove( );
                 $( '.posts' ).append( data );
-                page_Num += 10;
+                page_Num += 5;
             } );
     	}
     }
