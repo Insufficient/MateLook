@@ -8,15 +8,15 @@ from werkzeug.utils import secure_filename
 from lxml.html.clean import clean_html
 import re, sys, os, glob, jinja2, io
 import sqlite3 as sql
-import datetime
-import logging
+import datetime, logging, smtplib
+from email.mime.text import MIMEText
 
 ALLOWED_EXTENSIONS = set( ['png', 'jpg', 'jpeg' ] )
-
 users_dir = "static/dataset-large"
 db = "sql.db"
 
 app = Flask( __name__ )
+app.secret_key = '1@#(!@#IKL!@389123O!@#I!@O#8912LK!@@SSZXZK)'
 # app.config[ 'MAX_CONTENT_LENGTH' ] = 1 * 1024 * 1024        # 512 KB
 
 
@@ -83,16 +83,31 @@ def uploadPic( ):
 def send_static_file(path):
     return send_from_directory( 'static', path )
 
-# @app.route( '/test' )
-# def testView( ):
-#     con = sql.connect( db )
-#     cur = con.cursor( )
-#     cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ "z5013363", ] )
-#     results = cur.fetchall( )
-#     string = [', '.join(w) for w in results]
-#     string = '","'.join( string )
-#     mates = "(\"{}\")".format( string )
-#     return render_template( "error0.html", message=mates )
+"""
+    Allows users to verify their account!
+"""
+@app.route( '/verify/<zID>' )
+def verify( zID ):
+    if getSess( ) != None:
+        return render_template( "error.html", message="You cannot verify an account while being logged in." )
+
+    username = re.findall( r'z[0-9]{7}', zID[::-1] )    # Sanitize input
+    if not username:                                    # No user with the username found
+        return render_template( "error.html", message="Invalid username %s" % escape( zID[::-1] ) )
+
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT zID FROM User WHERE zID=? AND verified=?", ( username[ 0 ], False) )
+    results = cur.fetchone( )
+    if not results:
+        con.close( )
+        return render_template( "error.html", message="The user does not need to be verified" )
+    else:
+        cur.execute( "UPDATE User SET verified=? WHERE zID=?", ( True, username[ 0 ] ) )
+        con.commit( )
+        con.close( )
+        session[ 'username' ] = username[ 0 ]
+        return redirect( url_for( 'viewUsers', user_name=username[ 0 ] ) )
 
 """
     View a user's profile page.
@@ -117,26 +132,14 @@ def viewUsers( user_name=None ):
         cur.execute( "SELECT * FROM User WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchone( )
         u_Info = result
+        tmpUInfo = dictFromRow( u_Info )
+        if tmpUInfo[ 'verified' ] == 0:
+            flash( "The user profile you are trying to visit has not yet verified their email address." )
+            return redirect( url_for( 'auth' ) )
 
-        # cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ username[ 0 ] ] )
-        # results = cur.fetchall( )
-        # string = [', '.join(w) for w in results]
-        # string = '","'.join( string )
-        # mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
-        # # Get their mates and store it into a string.
-        # # cur = con.cursor( )
-        # cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT 10, 5".format( mates ), [ "%" + username[ 0 ] + "%" ] )
-        # # cur.execute( "SELECT * FROM Post WHERE zID IN {} ORDER BY time DESC".format( mates ) )
-        # result = cur.fetchall( )
-        # p_Info = result
-        # # cur = con.cursor( )
         cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchall( )
         m_Info = result
-        # cur = con.cursor( )
-        # cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ username[ 0 ] ] )
-        # result = cur.fetchall( )
-        # c_Info = result
 
         con.close( )
     else:
@@ -209,7 +212,6 @@ def delete( ):
     con = sql.connect( db )
     cur = con.cursor( )
     cur.execute( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
-    print( "SELECT zID FROM {} WHERE {} = {}".format( cType, colName, cParent ) )
     results = cur.fetchone( )
     if not results:
         return "The comment/post/reply does not exist."
@@ -260,7 +262,6 @@ def create( ):
     con = sql.connect( db )
     cur = con.cursor( )
     cur.execute( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
-    print( "SELECT zID FROM {} WHERE {} = ?".format( cType, colName, cParent ) )
     con.commit( )
     result = cur.fetchone( )
 
@@ -348,30 +349,37 @@ def auth( ):
         formName = request.form[ 'name' ]
 
         formUser = re.findall( r'z[0-9]{7}', formUser )     # Store only zID
-
+        formzID = formUser[ 0 ]
         if not formUser:
             flash( "Please enter your zID in the form: z5555555." )
             return render_template( "login.html" )
         if not formPass:
             flash( "Please enter a password." )
-            return render_template( "login.html", user=formUser[ 0 ] )
+            return render_template( "login.html", user=formzID )
 
         if request.form[ 'action' ] == 'Sign Up':
             if not formEmail:
                 flash( "Please enter a email!" )
-                return render_template( "login.html", user=formUser[ 0 ], pw=formPass )
+                return render_template( "login.html", user=formzID, pw=formPass )
 
             con = sql.connect( db )
             cur = con.cursor( )
-            cur.execute( "SELECT zID FROM User WHERE zID=?", [ formUser[ 0 ] ] )
+            cur.execute( "SELECT zID FROM User WHERE zID=?", [ formzID ] )
             con.commit( )
             result = cur.fetchone( )
             if not result:
                 try:
-                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)", ( \
-                    formUser[ 0 ], formName, formEmail, formPass, None, None, None ) )
+                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", ( \
+                    formzID, formName, formEmail, formPass, None, None, None, None, 0, 0 ) )
                     con.commit( )
-                    return redirect( url_for( 'viewUsers', user_name=formUser[ 0 ] ) )
+                    flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
+                    msg = """ Hello {},
+
+                    Welcome to MateLook, please verify your account by clicking on the link below:
+                    <a href="127.0.0.1:5000/verify/{}">Verify Account</a>
+                    """.format( formName, url_for( 'verify', zID=formzID[ ::-1 ] ) )
+                    sendEmail( formEmail, "Account Verification", msg )
+                    return redirect( url_for( 'auth' ) )
                 except sqlite3.Error as e:
                     print( "An error occurred!", e.args[ 0 ] )
             else:
@@ -498,7 +506,6 @@ def showProfBg( zID ):
         imgLoc = os.path.join( users_dir, "default_bg.png" )
     return send_file( imgLoc, mimetype='image/jpg' )
 
-app.secret_key = 'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL!@#L:@!:'
 """ getSess( )
  => returns the username of the session if any.
 """
@@ -566,6 +573,19 @@ def getPost( tID, type="Post" ):
     con.close( )
     return result
 
+def sendEmail( receiver, subject, message ):
+    msg = MIMEText( message, 'html')
+    sender = "MateLook <noreply@matelook.com>"
+    msg[ 'Subject' ] = subject
+    msg[ 'From' ] = sender
+    msg[ 'To' ] = receiver
+
+    try:
+        smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
+        smtpObj.sendmail(sender, receiver, msg.as_string( ) )
+    except smtplib.SMTPException:
+        print( "Unable to send email!" )
+
 def doMention( longString ):
     if not longString:
         return Markup( "None" )
@@ -595,8 +615,8 @@ def main( ):
     app.jinja_env.globals.update( isMate=isMate )
     app.jinja_env.filters['doMention'] = doMention
 
-    logger = logging.getLogger( __name__ )
-    logging.basicConfig( filename='hello.log', level=logging.DEBUG)
+    # logger = logging.getLogger( __name__ )
+    # logging.basicConfig( filename='hello.log', level=logging.DEBUG)
 
 
     if os.path.isfile( db ): return
