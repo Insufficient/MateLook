@@ -18,9 +18,11 @@
             <h1 class="app-name centered">FookMate</h1>
             {% if getSess( ) == None %}
             <form class="ui large form intro-login" action="{{ url_for( 'auth' ) }}" method="POST">
+                <h1 class="additional"></h1>
+
                 <div class="field">
                     <label>zID</label>
-                    <input type="text" name="zID" placeholder="z5555555" required value="{{ user }}">
+                    <input class="zID-field" type="text" name="zID" placeholder="z5555555" required value="{{ user }}">
                 </div>
                 <div class="field">
                     <label>Password</label>
@@ -36,8 +38,9 @@
                 </div>
                 <input class="ui primary button" name="action" type="submit" value="Login">
                 </input>
-                <input class="ui secondary button" name="action" type="submit" value="Sign Up">
+                <input class="ui secondary button sign-up" name="action" type="submit" value="Sign Up">
                 </input>
+                <div class="ui secondary red button forgot-pw">Forgot Password</div>
                 <div class="ui error message"></div>
             </form>
             {% endif %}
@@ -45,13 +48,26 @@
     </section>
 
     <script>
-        $( ".secondary" ).on( 'click', function( ) {
+        $( ".sign-up" ).on( 'click', function( ) {
             if( $( '.email' ).is( ":visible" ) ) {
 
             } else {
                 $( '.email' ).toggle( "500" );
                 $( '.full-name' ).toggle( "500" );
                 event.preventDefault( );
+            }
+        } );
+
+        $( ".forgot-pw" ).on( 'click', function( ) {
+            console.log( "PRINTED" );
+            if( $( ".zID-field" ).val( ).length == 8 ) {
+                $.post(
+                    '{{ url_for( "begin_recover" ) }}', { zID: $( '.zID-field' ).val( ) },
+                function( data ) {
+                    alert( data );
+                } );
+            } else {
+                $( '.additional' ).text( "Please enter a valid zID." ).hide( 2500 );
             }
         } );
     </script>

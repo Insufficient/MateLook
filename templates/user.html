@@ -205,9 +205,11 @@
     var page_Num = 0;
     $( '.ui.modal' ).modal( );
 
-    $( '.search-field').keypress( function( e ) {
+    $( '.search-field').keypress( function( evt ) {
+        var e = evt || event;
+        var code = e.keyCode || e.which;
         console.log( 'Text:' + $( '.search-field' ).val( ) );
-        if( event.keyCode == 13 ) {
+        if( code == 13 ) {
             if( $( '.search-field' ).val( ).length > 2 ) {
                 $.post(
                     '{{ url_for( "search" ) }}', { search: $( '.search-field' ).val( ) },

@@ -27,6 +27,9 @@ def allowed_file( filename ):
     return '.' in filename and \
            filename.rsplit( '.', 1 )[ 1 ] in ALLOWED_EXTENSIONS
 
+"""
+    Users can upload a profile or background picture.
+"""
 @app.route( '/uploadPicture', methods=['GET', 'POST'] )
 def uploadPic( ):
     if request.method == 'POST':
@@ -190,6 +193,9 @@ def editInfo( ):
     con.commit( )
     return redirect( url_for( 'viewUsers', user_name=zID ) )
 
+"""
+    Users can delete their comments, posts and replies.
+"""
 @app.route( '/delete', methods=[ 'POST' ] )
 def delete( ):
     cParent = request.form[ 'parent' ]
@@ -332,6 +338,59 @@ def search( ):
     else:
         flash( "Please enter at least three characters to search." )
         return render_template( "search.html" )
+
+"""
+    Users can view individual posts (/<type>/<id>)
+"""
+
+"""
+    Users can recover their passwords
+"""
+@app.route( '/begin_recover', methods=[ "POST" ] )
+def begin_recover( ):
+    zID = request.form[ 'zID' ]
+
+    formUser = re.findall( r'z[0-9]{7}', zID )     # Store only zID
+    if not formUser:
+        return "You must enter a valid zID. E.g: z5555555"
+    formzID = formUser[ 0 ]
+
+    if getInfo( formzID, "zID" ) == None:
+        return "The user does not exist."
+
+    dDate = datetime.datetime.now( )
+    secretFormat = dDate.strftime( "%m%I%B%M%S%p" )
+    con = sql.connect( db )
+    cur = con.cursor( )
+    uEmail = getInfo( formzID, "email" )
+    uPassw = getInfo( formzID, "password" )
+    cur.execute( "INSERT INTO Recover VALUES (?,?,?)", ( secretFormat[::-1], \
+                    uEmail, uPassw ) )
+    con.commit( )
+    # print( "Secret: " + secretFormat[::-1] )
+    msg = """You have requested for a password recovery.<br>To complete this
+    process, please go to the link below:
+    {}
+    """.format( secretFormat[::-1] )
+    sendEmail( uEmail, "Password Recovery", msg )
+    return "A recovery link has been sent to your email."
+
+@app.route( '/recover/<secret>' )
+def recover( secret ):
+    con = sql.connect( db )
+    cur = con.cursor( )
+    reverse = secret
+    cur.execute( "SELECT password, email FROM Recover WHERE sId=?", ( reverse, ) )
+    results = cur.fetchone( )
+    if not results:
+        return render_template( "error.html", message="Invalid recover key." )
+
+    msg = "You have successfully recovered your password - {}".format( results[ 0 ] )
+    cur.execute( "DELETE FROM Recover WHERE sID=?", ( reverse, ) )
+    con.commit( )
+    con.close( )
+    sendEmail( results[ 1 ], "Password Recovery", msg )
+    return redirect( url_for( 'auth' ) )
 
 
 """
