@@ -194,6 +194,44 @@ def editInfo( ):
     return redirect( url_for( 'viewUsers', user_name=zID ) )
 
 """
+    Users can completely delete their account.
+"""
+@app.route( '/delete_account', methods=[ 'GET', 'POST'] )
+def delete_acc( ):
+    if request.method == 'POST':
+        formzID = request.form[ 'zID' ]
+        formPass = request.form[ 'password' ]
+        sess = getSess( )
+
+        if formzID != sess:
+            return render_template( "error.html", message="You cannot this user's account." )
+
+        con = sql.connect( db )
+        cur = con.cursor( )
+        cur.execute( "SELECT zID FROM User WHERE zID=? AND password=?", ( sess, formPass ) )
+        results = cur.fetchone( )
+        if not results:
+            flash( "You have entered an incorrect password." )
+            return render_template( "deleteAcc.html" )
+
+        cur.execute( "DELETE FROM Reply WHERE zID=?", [ sess ] )
+        cur.execute( "DELETE FROM Comment WHERE zID=?", [ sess ] )
+        cur.execute( "DELETE FROM Post WHERE zID=?", [ sess ] )
+        cur.execute( "DELETE FROM Course WHERE zID=?", [ sess ] )
+        cur.execute( "DELETE FROM Mate WHERE zID=?", [ sess ] )
+        cur.execute( "DELETE FROM User WHERE zID=?", [ sess ] )
+        con.commit( )
+        con.close( )
+
+        session.pop( 'username', None )
+        flash( "You have successfully deleted your account." )
+        return redirect( url_for( 'auth' ) )
+
+    else:
+        return render_template( 'deleteAcc.html' )
+
+
+"""
     Users can delete their comments, posts and replies.
 """
 @app.route( '/delete', methods=[ 'POST' ] )
@@ -230,7 +268,7 @@ def delete( ):
             cur.execute( "DELETE FROM Reply WHERE cID = ?", [ cParent ] )
 
         cur.execute( "DELETE FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
-    except sqlite3.Error as e:
+    except sql.Error as e:
         print( "An error occurred!", e.args[ 0 ] )
 
     con.commit( )
@@ -438,7 +476,7 @@ def auth( ):
                     """.format( formName,  url_for( 'verify', zID=formzID[ ::-1 ], _external=True ) )
                     sendEmail( formEmail, "Account Verification", msg )
                     return redirect( url_for( 'auth' ) )
-                except sqlite3.Error as e:
+                except sql.Error as e:
                     print( "An error occurred!", e.args[ 0 ] )
             else:
                 flash( "The user " + formUser[ 0 ] + " already exists." )
@@ -493,6 +531,23 @@ def mate( ):
         con.commit( )
         con.close( )
         return "Mate has been added."
+
+"""
+    Users can view individual posts
+"""
+@app.route( '/view/<pID>' )
+def viewIndivPost( pID ):
+    p_Info = tuple( )
+
+    con = sql.connect( db )
+    con.row_factory = sql.Row
+    cur = con.cursor( )
+    cur.execute( "SELECT * FROM Post WHERE pID=?", [ pID ] )
+    results = cur.fetchall( )
+    p_Info = results
+    print( p_Info )
+    con.close( )
+    return render_template( "singlePost.html", pInfo=p_Info )
 
 """
     Logout page
@@ -552,6 +607,9 @@ def showProfPict( zID ):
         imgLoc = os.path.join( users_dir, "default.png" )
     return send_file( imgLoc, mimetype='image/jpg' )
 
+"""
+    Serve profile background statically
+"""
 @app.route( '/profile_bg/<zID>' )
 def showProfBg( zID ):
     username = re.findall( r'z[0-9]{7}', zID )                      # Sanitize input
@@ -631,6 +689,11 @@ def getPost( tID, type="Post" ):
     con.close( )
     return result
 
+""" sendEmail( receiver, subject, message )
+    receiver    - email of recipient
+    subject     - subject of email
+    message     - contents of email
+"""
 def sendEmail( receiver, subject, message ):
     msg = MIMEText( message, 'html')
     sender = "MateLook <noreply@matelook.com>"

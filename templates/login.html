@@ -15,7 +15,7 @@
             {% endif %}
             {% endwith %}
 
-            <h1 class="app-name centered">FookMate</h1>
+            <h1 class="app-name centered">MateLook</h1>
             {% if getSess( ) == None %}
             <form class="ui large form intro-login" action="{{ url_for( 'auth' ) }}" method="POST">
                 <h1 class="additional"></h1>
@@ -40,7 +40,7 @@
                 </input>
                 <input class="ui secondary button sign-up" name="action" type="submit" value="Sign Up">
                 </input>
-                <div class="ui secondary red button forgot-pw">Forgot Password</div>
+                <div class="ui red button forgot-pw">Forgot Password</div>
                 <div class="ui error message"></div>
             </form>
             {% endif %}
@@ -67,7 +67,7 @@
                     alert( data );
                 } );
             } else {
-                $( '.additional' ).text( "Please enter a valid zID." ).hide( 2500 );
+                $( '.additional' ).text( "Please enter a valid zID." ).toggle( ).hide( 1500 );
             }
         } );
     </script>
