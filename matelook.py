@@ -371,7 +371,7 @@ def begin_recover( ):
     msg = """You have requested for a password recovery.<br>To complete this
     process, please go to the link below:
     {}
-    """.format( secretFormat[::-1] )
+    """.format( url_for( 'recover', secret=secretFormat[::-1], _external=True ) )
     sendEmail( uEmail, "Password Recovery", msg )
     return "A recovery link has been sent to your email."
 
@@ -435,7 +435,7 @@ def auth( ):
                     msg = """ Hello {},<br>
                     Welcome to MateLook, please verify your account by clicking on the link below:<br>
                     {}
-                    """.format( formName,  url_for( 'verify', zID=formzID[ ::-1 ] ) )
+                    """.format( formName,  url_for( 'verify', zID=formzID[ ::-1 ], _external=True ) )
                     sendEmail( formEmail, "Account Verification", msg )
                     return redirect( url_for( 'auth' ) )
                 except sqlite3.Error as e:
