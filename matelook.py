@@ -373,11 +373,10 @@ def auth( ):
                     formzID, formName, formEmail, formPass, None, None, None, None, 0, 0 ) )
                     con.commit( )
                     flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
-                    msg = """ Hello {},
-
-                    Welcome to MateLook, please verify your account by clicking on the link below:
-                    <a href="127.0.0.1:5000/verify/{}">Verify Account</a>
-                    """.format( formName, url_for( 'verify', zID=formzID[ ::-1 ] ) )
+                    msg = """ Hello {},<br>
+                    Welcome to MateLook, please verify your account by clicking on the link below:<br>
+                    {}
+                    """.format( formName,  url_for( 'verify', zID=formzID[ ::-1 ] ) )
                     sendEmail( formEmail, "Account Verification", msg )
                     return redirect( url_for( 'auth' ) )
                 except sqlite3.Error as e:
