@@ -204,7 +204,7 @@ def delete_acc( ):
         sess = getSess( )
 
         if formzID != sess:
-            return render_template( "error.html", message="You cannot this user's account." )
+            return render_template( "error.html", message="You cannot delete an account you do not own." )
 
         con = sql.connect( db )
         cur = con.cursor( )

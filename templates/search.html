@@ -50,10 +50,10 @@
                 </div>
             </div>
             <div class="extra content">
-                <a>
+                <!-- <a>
                 <i class="user icon"></i>
                 22 Friends
-                </a>
+                </a> -->
             </div>
         </div>
         {% endfor %}
@@ -61,11 +61,11 @@
 </div>
 {% endif %}
 {% if posts %}
-<div class="ui bottom attached tab segment" data-tab="second">
+<div class="ui bottom attached tab segment results-posts" data-tab="second">
     <div class="ui cards">
         {% for post in posts %}
         {% set rowInfo = dictFromRow( post ) %}
-        <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
+        <div class="ui raised fluid card post">
             <div class="content">
                 <div class="right floated author">
                     <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ rowInfo.zID }}
@@ -80,15 +80,16 @@
             </div>
         </div>
         {% endfor %}
+        <button class="ui button blue toggle-sPost">Show more</button>
     </div>
 </div>
 {% endif %}
 {% if comments %}
-<div class="ui bottom attached tab segment" data-tab="third">
+<div class="ui bottom attached tab segment results-comments" data-tab="third">
     <div class="ui cards">
         {% for comment in comments %}
         {% set rowInfo = dictFromRow( comment ) %}
-        <div class="ui raised fluid card post" id="comment-{{ rowInfo.cID }}">
+        <div class="ui raised fluid card post">
             <div class="content">
                 <div class="right floated author">
                     <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}"> {{ rowInfo.zID }}
@@ -103,11 +104,12 @@
             </div>
         </div>
         {% endfor %}
+        <button class="ui button blue toggle-sComm">Show more</button>
     </div>
 </div>
 {% endif %}
 {% if replies %}
-<div class="ui bottom attached tab segment" data-tab="fourth">
+<div class="ui bottom attached tab segment results-replies" data-tab="fourth">
     <div class="ui cards">
         {% for reply in replies %}
         {% set rowInfo = dictFromRow( reply ) %}
@@ -126,6 +128,7 @@
             </div>
         </div>
         {% endfor %}
+        <button class="ui button blue toggle-sReply">Show more</button>
     </div>
 </div>
 {% endif %}

@@ -3,18 +3,20 @@
     <!-- Check if person is a mate! -->
     {% set sessName = getSess( ) %}
     {% if uInfo.private != 1 or sessName == username %}
-    {% if sessName %}
     <section class="page-header">
         <div class="ui fluid container">
             <div class="ui grey secondary menu">
+                {% if sessName %}
                 <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, 'full_name') }}</a>
                 <div class="right menu">
                     <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
                 </div>
+                {% else %}
+                <a href="{{ url_for( 'auth' ) }}"><button class="ui button">Login</button></a>
+                {% endif %}
             </div>
         </div>
     </section>
-    {% endif %}
 
     <section class="hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
         <div class="ui fluid container">
@@ -117,6 +119,8 @@
                 <input class="ui primary blue button" type="submit" value="Upload">
                 <input class="ui primary red button" name="action" type="submit" value="Delete Current Picture">
             </form>
+            <h1>Account Settings</h1>
+            <a href="{{ url_for( 'delete_acc' ) }}"><button class="ui button red">Delete Account</button></a>
         </div>
     </section>
     {% endif %}
@@ -203,6 +207,52 @@
 
     <script>
     var page_Num = 0;
+    var s_comm = 0;
+    var s_post = 0;
+    var s_reply = 0;
+    var s_cInd = 5;
+    var s_pInd = 5;
+    var s_rInd = 5;
+
+    var showNextComm = function( sNum ) {
+        if( sNum > s_comm.length ) {
+            $( '.toggle-sComm' ).remove( );
+        }
+        s_comm.hide( ).slice( 0, sNum ).show( );
+        $( '.ui.modal' ).modal( 'refresh' );
+    }
+
+    var showNextReply = function( sNum ) {
+        if( sNum > s_reply.length ) {
+            $( '.toggle-sReply' ).remove( );
+        }
+        s_reply.hide( ).slice( 0, sNum ).show( );
+        $( '.ui.modal' ).modal( 'refresh' );
+    }
+
+    var showNextPost = function( sNum ) {
+        if( sNum > s_post.length ) {
+            $( '.toggle-sPost' ).remove( );
+        }
+        s_post.hide( ).slice( 0, sNum ).show( );
+        $( '.ui.modal' ).modal( 'refresh' );
+    }
+
+    $( document ).on( 'click', '.toggle-sComm', function( ) {
+        s_cInd += 5;
+        showNextComm( s_cInd );
+    } );
+
+    $( document ).on( 'click', '.toggle-sPost', function( ) {
+        s_pInd += 5;
+        showNextPost( s_pInd );
+    } );
+
+    $( document ).on( 'click', '.toggle-sReply', function( ) {
+        s_rInd += 5;
+        showNextReply( s_rInd );
+    } );
+
     $( '.ui.modal' ).modal( );
 
     $( '.search-field').keypress( function( evt ) {
@@ -220,6 +270,12 @@
                             $( '.ui.modal' ).modal( 'refresh' );
                         } } );
                     $( '.ui.modal' ).modal( 'show' );
+                    s_comm = $( ".results-comments .card" );
+                    s_post = $( ".results-posts .card" );
+                    s_reply = $( ".results-replies .card" );
+                    showNextComm( 5 );
+                    showNextPost( 5 );
+                    showNextReply( 5 );
                 } );
             }
         }
@@ -306,6 +362,7 @@
         var scrollHeight = $(document).height();
     	var scrollPosition = $(window).height() + $(window).scrollTop();
     	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+            console.log( "Showing more posts!" );
             $( '.posts' ).append( '<div class="ui active centered inline loader delete_me"></div>' );
             $.post(
                 '{{ url_for( "viewPost" ) }}', {
