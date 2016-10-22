@@ -359,13 +359,13 @@
             postCD = 1;
             console.log( "Showing more posts!" );
             $( '.delete_me' ).toggle( );
+            setTimeout( function( ) { postCD = 0; }, 1000 );
             $.post(
                 '{{ url_for( "viewPost" ) }}', {
                     zID: '{{ username }}',
                     pageNum: page_Num
                 },
             function( data ) {
-                setTimeout( function( ) { postCD = 0; }, 1000 );
                 $( '.delete_me' ).toggle( );
                 $( '.posts' ).append( data );
                 page_Num += 5;
