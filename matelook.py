@@ -511,10 +511,10 @@ def auth( ):
 
     TODO:: Make sure everything is working fine.
         - Add option to accept or reject by adding another parameter in the URL
-    MateReq 
-    | zID | mID | accepted | 
+    MateReq
+    | zID | mID | accepted |
 """
-@app.route( '/mate/<mID>/<option>',  )
+@app.route( '/mate/<mID>/<int:option>',  )
 def mate( mID, option ):
     zID = getSess( )
     if not zID:
@@ -524,38 +524,63 @@ def mate( mID, option ):
 
     if not mUser:                               # No user with the username found
         return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
-    if isMate( zID, mUser[ 0 ] ):
+    if isMate( zID, mUser[ 0 ] ) and option < 2:
         return render_template( "error.html", message="You are already mates with this user." )
-
+    if mUser[ 0 ] == zID:
+        return render_template( "error.html", message="You cannot attempt to mate yourself.")
 
     con = sql.connect( db )
     cur = con.cursor( )
     # Swap zID and mID to find previous entry perhaps?
     cur.execute( "SELECT zID FROM MateReq WHERE zID=? AND mID=?", ( mUser[ 0 ], zID ) )
     results = cur.fetchone( )
+    if option == 1:                 # We want to send a mate request.
+        if not results:             # User is sending a mate request
+            cur.execute( "SELECT zID FROM MateReq WHERE zID=? AND mID=?", ( zID, mUser[ 0 ] ) )
+            results = cur.fetchone( )
+            if results:
+                return "You have already sent that user a mate request."
 
-    if option == 1:     # We want to send a mate request.
-        if not results:     # User is first adding another user as a mate.
             cur.execute( "INSERT INTO MateReq VALUES (?,?)", ( zID, mUser[ 0 ] ) )
+
             con.commit( )
-            msg = """{} has sent you a mate request. 
-            To accept this request, visit the link below:
+            con.close( )
+            msg = """{} has sent you a mate request.<br>
+            If you wish to accept this request, visit the link below:<br>
+            {}<br>
+            Otherwise, click the link below to decline this request.<br>
             {}
-            """.format( zID, url_for( 'mate', mID=zID ) )
+            """.format( zID, url_for( 'mate', mID=zID, option=1, _external=True ), \
+                        url_for( 'mate', mID=zID, option=0, _external=True) )
             sendEmail( getInfo( mUser[ 0 ], "email" ), "MateLook - Mate Request", msg )
             return "You have sent that user a mate request."
-        else:               # User is accepting another request.
-            # Remove from MateReq then add for Mate
+        else:                       # User is accepting another request.
             cur.execute( "DELETE FROM MateReq WHERE zID=? AND mID=?", ( mUser[ 0 ], zID ) )
             cur.execute( "INSERT INTO Mate VALUES (?,?)", ( zID, mUser[ 0 ] ) )
+            cur.execute( "INSERT INTO Mate VALUES (?,?)", ( mUser[ 0 ], zID ) )
             con.commit( )
+            con.close( )
             return "You have added that user as a mate."
-    else:               # We want to remove that mate request.
+    elif option == 0:               # We want to remove that mate request.
         if results:
             cur.execute( "DELETE FROM MateReq WHERE zID=? and mID=?", ( mUser[ 0 ], zID ) )
+            con.commit( )
+            con.close( )
             return "You have delinced that users mate request."
         else:
             return "You cannot decline a request that does not exist."
+    else:                           # We want to remove mates.
+        cur.execute( "SELECT zID FROM Mate WHERE ( zID=? AND mateID=? ) OR ( zID=? AND mateID=? )" \
+                        , ( zID, mUser[ 0 ], mUser[ 0 ], zID ) )
+        results = cur.fetchone( )
+        if results:
+            cur.execute( "DELETE FROM Mate WHERE ( zID=? AND mateID=? ) OR ( zID=? AND mateID=? )" \
+                        , ( zID, mUser[ 0 ], mUser[ 0 ], zID ) )
+            con.commit( )
+            return "You have unmated that user."
+        else:
+            con.close( )
+            return "You cannot unmate a user that is not your mate."
 
 # @app.route( '/mate', methods=[ 'POST' ] )
 # def mate( ):

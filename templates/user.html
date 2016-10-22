@@ -34,9 +34,9 @@
                     {% if sessName == username %}
                     <div class="ui button profile-edit">Edit Profile</div>
                     {% elif sessName != None and ( isMate( uInfo.zID, sessName ) == 1 or isMate( sessName, uInfo.zID ) == 1 )%}
-                    <div class="ui button mate-action">Remove Mate</div>
-                    {% elif sessName != None%}
-                    <a href="{{ url_for( 'mate', mID=uInfo.zID ) }}"<div class="ui button">Add Mate</div>
+                    <a href="{{ url_for( 'mate', mID=uInfo.zID, option=2 )}}"><div class="ui button mate-action">Remove Mate</div></a>
+                    {% elif sessName != None %}
+                    <a href="{{ url_for( 'mate', mID=uInfo.zID, option=1 ) }}"><div class="ui button">Add Mate</div></a>
                     {% endif %}
                 </div>
                 <div class="four wide column">
