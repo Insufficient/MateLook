@@ -1,5 +1,6 @@
 {% include 'header.html' %}
 <body>
+    {% if uInfo %}
     <!-- Check if person is a mate! -->
     {% set sessName = getSess( ) %}
     {% if uInfo.private != 1 or sessName == username %}
@@ -34,8 +35,8 @@
                     <div class="ui button profile-edit">Edit Profile</div>
                     {% elif sessName != None and ( isMate( uInfo.zID, sessName ) == 1 or isMate( sessName, uInfo.zID ) == 1 )%}
                     <div class="ui button mate-action">Remove Mate</div>
-                    {% else %}
-                    <div class="ui button mate-action">Add Mate</div>
+                    {% elif sessName != None%}
+                    <a href="{{ url_for( 'mate', mID=uInfo.zID ) }}"<div class="ui button">Add Mate</div>
                     {% endif %}
                 </div>
                 <div class="four wide column">
@@ -337,17 +338,6 @@
         } );
     } );
 
-    $( '.mate-action' ).on( 'click', function( ) {
-        $.post(
-            '{{ url_for( "mate" ) }}', {
-                zID: '{{ sessName }}',
-                mID: '{{ uInfo.zID }}' },
-        function( data ) {
-            alert( data );
-            location.reload( );
-        } );
-    } );
-
     $( '.profile-edit' ).on( 'click', function ( ) {
         $( '.edit-info' ).slideToggle( "slow" );
     } );
@@ -379,6 +369,7 @@
     </script>
     {% else %}
         <h1>This profile is private. ;[ </h1>
+    {% endif %}
     {% endif %}
 </body>
 </html>

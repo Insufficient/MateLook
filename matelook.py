@@ -507,30 +507,84 @@ def auth( ):
         return render_template( "login.html" )
 
 """
-    Add/Remove mates
-"""
-@app.route( '/mate', methods=[ 'POST' ] )
-def mate( ):
-    zID = request.form[ 'zID' ]
-    mID = request.form[ 'mID' ]
+    Send mate requests
 
-    zUser = re.findall( r'z[0-9]{7}', zID )   # Sanitize input
-    mUser = re.findall( r'z[0-9]{7}', mID )   # Sanitize input
-    if not zUser or not mUser:                      # No user with the username found
+    TODO:: Make sure everything is working fine.
+        - Add option to accept or reject by adding another parameter in the URL
+    MateReq 
+    | zID | mID | accepted | 
+"""
+@app.route( '/mate/<mID>/<option>',  )
+def mate( mID, option ):
+    zID = getSess( )
+    if not zID:
+        return render_template( "error.html", message="You cannot do this when you're not logged in." )
+
+    mUser = re.findall( r'z[0-9]{7}', mID )     # Sanitize input
+
+    if not mUser:                               # No user with the username found
         return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
+    if isMate( zID, mUser[ 0 ] ):
+        return render_template( "error.html", message="You are already mates with this user." )
+
 
     con = sql.connect( db )
     cur = con.cursor( )
-    if isMate( zUser[ 0 ], mUser[ 0 ] ):  # Already mates, so remove them.
-        cur.execute( "DELETE FROM Mate WHERE zID=? AND mateID=?", ( zUser[ 0 ], mUser[ 0 ] ) )
-        con.commit( )
-        con.close( )
-        return "Mate has been deleted."
-    else:
-        cur.execute( "INSERT INTO Mate VALUES (?,?)", ( zUser[ 0 ], mUser[ 0 ] ) )
-        con.commit( )
-        con.close( )
-        return "Mate has been added."
+    # Swap zID and mID to find previous entry perhaps?
+    cur.execute( "SELECT zID FROM MateReq WHERE zID=? AND mID=?", ( mUser[ 0 ], zID ) )
+    results = cur.fetchone( )
+
+    if option == 1:     # We want to send a mate request.
+        if not results:     # User is first adding another user as a mate.
+            cur.execute( "INSERT INTO MateReq VALUES (?,?)", ( zID, mUser[ 0 ] ) )
+            con.commit( )
+            msg = """{} has sent you a mate request. 
+            To accept this request, visit the link below:
+            {}
+            """.format( zID, url_for( 'mate', mID=zID ) )
+            sendEmail( getInfo( mUser[ 0 ], "email" ), "MateLook - Mate Request", msg )
+            return "You have sent that user a mate request."
+        else:               # User is accepting another request.
+            # Remove from MateReq then add for Mate
+            cur.execute( "DELETE FROM MateReq WHERE zID=? AND mID=?", ( mUser[ 0 ], zID ) )
+            cur.execute( "INSERT INTO Mate VALUES (?,?)", ( zID, mUser[ 0 ] ) )
+            con.commit( )
+            return "You have added that user as a mate."
+    else:               # We want to remove that mate request.
+        if results:
+            cur.execute( "DELETE FROM MateReq WHERE zID=? and mID=?", ( mUser[ 0 ], zID ) )
+            return "You have delinced that users mate request."
+        else:
+            return "You cannot decline a request that does not exist."
+
+# @app.route( '/mate', methods=[ 'POST' ] )
+# def mate( ):
+#     zID = request.form[ 'zID' ]
+#     mID = request.form[ 'mID' ]
+
+#     zUser = re.findall( r'z[0-9]{7}', zID )   # Sanitize input
+#     mUser = re.findall( r'z[0-9]{7}', mID )   # Sanitize input
+#     if not zUser or not mUser:                      # No user with the username found
+#         return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
+
+#     con = sql.connect( db )
+#     cur = con.cursor( )
+#     if isMate( zUser[ 0 ], mUser[ 0 ] ):  # Already mates, so remove them.
+#         cur.execute( "DELETE FROM Mate WHERE zID=? AND mateID=?", ( zUser[ 0 ], mUser[ 0 ] ) )
+#         con.commit( )
+#         con.close( )
+#         return "Mate has been deleted."
+#     else:
+#         cur.execute( "INSERT INTO Mate VALUES (?,?)", ( zUser[ 0 ], mUser[ 0 ] ) )
+#         con.commit( )
+#         con.close( )
+#         return "Mate has been added."
+
+"""
+    Notify a user
+"""
+def notify( zID, subject, msg ):
+    return None
 
 """
     Users can view individual posts
@@ -897,4 +951,4 @@ def parseDataset( ):
 main( )
 
 if __name__ == "__main__":
-    app.run( debug=True, port=5000, host="0.0.0.0", threaded=True) # 0.0.0.0
+    app.run( debug=True, port=5000, host="127.0.0.1", threaded=True) # 0.0.0.0
