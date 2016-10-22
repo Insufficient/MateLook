@@ -199,11 +199,11 @@
             <p>Password: {{ uInfo.password }}</p>
         {% endif %}
     {% endif %}
-    <textarea>{{ uInfo|string }}</textarea>
-    <textarea>{{ pInfo|string }}</textarea>
+    <!-- <textarea>{{ uInfo|string }}</textarea>
+    <textarea>{{ pInfo|string }}</textarea> -->
 
     <section class="footer" id="footer">
-
+        <div class="ui active centered inline loader delete_me"></div>
     </section>
 
     <script>
@@ -347,20 +347,26 @@
     });
 
     showPost( );
-
+    var postCD = 0;
     function showPost( ) {
         var scrollHeight = $(document).height();
     	var scrollPosition = $(window).height() + $(window).scrollTop();
     	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+            if( postCD == 1 ) {
+                console.log( "Waiting for CD.." );
+                return;
+            }
+            postCD = 1;
             console.log( "Showing more posts!" );
-            $( '.posts' ).append( '<div class="ui active centered inline loader delete_me"></div>' );
+            $( '.delete_me' ).toggle( );
             $.post(
                 '{{ url_for( "viewPost" ) }}', {
                     zID: '{{ username }}',
                     pageNum: page_Num
                 },
             function( data ) {
-                $( '.delete_me' ).remove( );
+                setTimeout( function( ) { postCD = 0; }, 1000 );
+                $( '.delete_me' ).toggle( );
                 $( '.posts' ).append( data );
                 page_Num += 5;
             } );
