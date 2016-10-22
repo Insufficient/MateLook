@@ -695,6 +695,7 @@ def getPost( tID, type="Post" ):
     message     - contents of email
 """
 def sendEmail( receiver, subject, message ):
+    logger = logging.getLogger( __name__ )
     msg = MIMEText( message, 'html')
     sender = "MateLook <noreply@matelook.com>"
     msg[ 'Subject' ] = subject
@@ -702,11 +703,17 @@ def sendEmail( receiver, subject, message ):
     msg[ 'To' ] = receiver
 
     try:
-        smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
-        smtpObj.sendmail(sender, receiver, msg.as_string( ) )
+        logger.info( "\tEmail Sent.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
+        # smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
+        # smtpObj.sendmail(sender, receiver, msg.as_string( ) )
     except smtplib.SMTPException:
-        print( "Unable to send email!" )
+        logger.info( "\tUnable to send email.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
 
+"""
+    doMention converts a message string into HTML Markup.
+    (\n => <br>)
+    (@z5117924 => <a href="/users/z5117924">Full Name</a>)
+"""
 def doMention( longString ):
     if not longString:
         return Markup( "None" )
@@ -722,13 +729,16 @@ def doMention( longString ):
         longString = re.sub( swapFrom, swapInto, longString )
     return Markup( longString )
 
-# Credits to bbengfort from StackOverflow.
+"""
+    Converts SQL row format into a dictionary
+    Credits to bbengfort from StackOverflow.
+"""
 def dictFromRow( row ):
     return dict( zip( row.keys( ), row ) )
 
 def main( ):
 
-    # Make getInfo callable from Jinja.
+    # Make functions callable from Jinja.
     app.jinja_env.globals.update( getInfo=getInfo )
     app.jinja_env.globals.update( getSess=getSess )
     app.jinja_env.globals.update( dictFromRow=dictFromRow )
@@ -739,7 +749,9 @@ def main( ):
     # logger = logging.getLogger( __name__ )
     # logging.basicConfig( filename='hello.log', level=logging.DEBUG)
 
-
+    logger = logging.getLogger( __name__ )
+    logging.basicConfig( filename='out.log', level=logging.INFO )
+    logging.info( "Starting MateLook.py ...\n" )
     if os.path.isfile( db ): return
     # We don't need to recreate the database if it already exists.
 
