@@ -354,11 +354,11 @@
     	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
             if( postCD == 1 ) {
                 console.log( "Waiting for CD.." );
-                return;
+                return 0;
             }
             postCD = 1;
             console.log( "Showing more posts!" );
-            $( '.delete_me' ).toggle( );
+            $( '.delete_me' ).show( );
             setTimeout( function( ) { postCD = 0; }, 1000 );
             $.post(
                 '{{ url_for( "viewPost" ) }}', {
@@ -366,7 +366,11 @@
                     pageNum: page_Num
                 },
             function( data ) {
-                $( '.delete_me' ).toggle( );
+                if( data == "" ) {
+                    console.log( "No more posts!" );
+                    postCD = 1;
+                }
+                $( '.delete_me' ).hide( );
                 $( '.posts' ).append( data );
                 page_Num += 5;
             } );

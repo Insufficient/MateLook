@@ -1,3 +1,18 @@
+body {
+    padding-bottom: 50px;
+}
+
+.footer {
+    position: fixed;
+    top: 95%;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.delete_me {
+    display: none;
+}
+
 .action-delete {
     font-weight: bold;
     color: red;
