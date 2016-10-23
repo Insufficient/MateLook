@@ -125,9 +125,8 @@ def viewUsers( user_name=None ):
         return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
 
     u_Info = tuple( )
-    p_Info = tuple( )
     m_Info = tuple( )
-    c_Info = tuple( )
+    n_Info = tuple( )
     if username[ 0 ] == getInfo( username[ 0 ], 'zID' ): # User exists
         con = sql.connect( db )
         con.row_factory = sql.Row
@@ -143,11 +142,14 @@ def viewUsers( user_name=None ):
         cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchall( )
         m_Info = result
+        cur.execute( "SELECT * FROM Notes WHERE zID=? ORDER BY time", [ username[ 0 ] ] )
+        result = cur.fetchall( )
+        n_Info = result
 
         con.close( )
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
-    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, pInfo=p_Info, mInfo=m_Info, cInfo=c_Info )
+    return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, mInfo=m_Info, nInfo=n_Info )
 
 # Sneaky
 # SELECT zID, courseID FROM Course group by courseID having COUNT(courseID) > 1
@@ -315,6 +317,11 @@ def create( ):
 
     cDate = datetime.datetime.now( )
     cMessage = cMessage.replace( '\n', '\\n' )
+    matches = re.findall( r'@(z[0-9]{7})', cMessage )
+    for match in matches:
+        notify( match, zID, 4, url_for( 'viewUsers', user_name=zID, _external=True ) )
+    # TODO: Individual POSTS
+
     # We need to preserve newlines and etc somehow.
 
     if colName == 'zID':                            # New post
@@ -552,7 +559,10 @@ def mate( mID, option ):
             {}
             """.format( zID, url_for( 'mate', mID=zID, option=1, _external=True ), \
                         url_for( 'mate', mID=zID, option=0, _external=True) )
-            sendEmail( getInfo( mUser[ 0 ], "email" ), "MateLook - Mate Request", msg )
+            if getInfo( mUser[ 0 ], "emailReq1" ):
+                sendEmail( getInfo( mUser[ 0 ], "email" ), "MateLook - Mate Request", msg )
+
+            notify( mUser[ 0 ], zID, 0, url_for( 'viewUsers', user_name=zID ,_external=True ) )
             return "You have sent that user a mate request."
         else:                       # User is accepting another request.
             cur.execute( "DELETE FROM MateReq WHERE zID=? AND mID=?", ( mUser[ 0 ], zID ) )
@@ -560,12 +570,14 @@ def mate( mID, option ):
             cur.execute( "INSERT INTO Mate VALUES (?,?)", ( mUser[ 0 ], zID ) )
             con.commit( )
             con.close( )
+            notify( mUser[ 0 ], zID, 1, url_for( 'viewUsers', user_name=zID ,_external=True ) )
             return "You have added that user as a mate."
     elif option == 0:               # We want to remove that mate request.
         if results:
             cur.execute( "DELETE FROM MateReq WHERE zID=? and mID=?", ( mUser[ 0 ], zID ) )
             con.commit( )
             con.close( )
+            notify( mUser[ 0 ], zID, 2, url_for( 'viewUsers', user_name=zID ,_external=True ) )
             return "You have delinced that users mate request."
         else:
             return "You cannot decline a request that does not exist."
@@ -577,6 +589,7 @@ def mate( mID, option ):
             cur.execute( "DELETE FROM Mate WHERE ( zID=? AND mateID=? ) OR ( zID=? AND mateID=? )" \
                         , ( zID, mUser[ 0 ], mUser[ 0 ], zID ) )
             con.commit( )
+            notify( mUser[ 0 ], zID, 3, url_for( 'viewUsers', user_name=zID ,_external=True ) )
             return "You have unmated that user."
         else:
             con.close( )
@@ -604,12 +617,6 @@ def mate( mID, option ):
 #         con.commit( )
 #         con.close( )
 #         return "Mate has been added."
-
-"""
-    Notify a user
-"""
-def notify( zID, subject, msg ):
-    return None
 
 """
     Users can view individual posts
@@ -787,6 +794,44 @@ def sendEmail( receiver, subject, message ):
         # smtpObj.sendmail(sender, receiver, msg.as_string( ) )
     except smtplib.SMTPException:
         logger.info( "\tUnable to send email.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
+
+""" notify( zID, initiator, nType, URL )
+    zID         - recv
+    initiator   - sender
+    type        - type of notification
+        [0] => Friend Request Sent
+        [1] => Friend Request Accepted
+        [2] => Friend Request Declined
+        [3] => Friend Removed
+        [4] => Mentioned
+    URL         - location to-go-to.
+"""
+def notify( zID, initiator, nType, URL ):
+    if not getInfo( zID, "zID" ) or not getInfo( initiator, "zID" ):
+        return
+    # emailNotif1 = getInfo( zID, "emailReq1" )   # Check if this user wants to be emailed friend requests.
+    emailNotif2 = getInfo( zID, "emailReq2" )   # Check if this user wants to be emailed for mentions
+
+    if nType == 0:
+        msg = "@{} sent you a mate request.".format( initiator )
+    elif nType == 1:
+        msg = "@{} has accepted your mate request.".format( initiator )
+    elif nType == 2:
+        msg = "@{} has declined your mate request.".format( initiator )
+    elif nType == 3:
+        msg = "@{} has removed you from their mates list.".format( initiator )
+    elif nType == 4:
+        msg = "@{} has mentioned you in a post/comment/reply.".format( initiator )
+
+    if nType == 4 and emailNotif2 == 1:
+        sendEmail( getInfo( zID, "email" ), "MateLook - Notification", "<br>" + msg )
+
+    cDate = datetime.datetime.now( )
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "INSERT INTO Notes VALUES( ?, ?, ?, ?, ?, ? )", ( zID, initiator, msg, nType, cDate, URL ) )
+    con.commit( )
+    con.close( )
 
 """
     doMention converts a message string into HTML Markup.

@@ -143,12 +143,12 @@
         <div class="ui fluid container">
             {% if mInfo %}
                 <h1>Mates</h1>
-                <div class="ui doubling grid">
+                <div class="ui equal width doubling grid">
                     {% for mate in mInfo %}
                     {% set rowInfo = dictFromRow( mate ) %}
                     <div class="column mate">
                         <div class="image">
-                            <a class="ui" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
+                            <a class="mate-hover" href="{{ rowInfo.mateID }}" data-tooltip="{{ getInfo( rowInfo.mateID, 'full_name' ) }}">
                                 <img class="mate-picture" src="../profile_picture/{{ rowInfo.mateID }}" />
                             </a>
                         </div>
@@ -157,6 +157,14 @@
                 </div>
             {% endif %}
         </div>
+    </section>
+
+    <section class="notifications">
+    {% for mate in nInfo %}
+    {% set rowInfo = dictFromRow( mate ) %}
+        <h1>{{ rowInfo.msg|doMention }}</h1>
+        <p>From {{ rowInfo.initiator }}</p>
+    {% endfor %}
     </section>
 
     <section class="content">
@@ -173,7 +181,7 @@
                     </div>
                     <div class="extra-content">
                         <div class="actions">
-                            <button class="ui button action-create" data-type="Post" data-parent="{{ username }}">Create</button>
+                            <button class="ui button green action-create" data-type="Post" data-parent="{{ username }}">Create</button>
                         </div>
                     </div>
                 </div>
@@ -366,11 +374,11 @@
                     pageNum: page_Num
                 },
             function( data ) {
+                $( '.delete_me' ).hide( );
                 if( data == "" ) {
                     console.log( "No more posts!" );
                     postCD = 1;
                 }
-                $( '.delete_me' ).hide( );
                 $( '.posts' ).append( data );
                 page_Num += 5;
             } );

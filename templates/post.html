@@ -3,7 +3,7 @@
 <div class="ui raised fluid card post" id="post-{{ rowInfo.pID }}">
     <div class="content">
         <div class="right floated author">
-            <img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}">
+            <a href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}"><img class="ui avatar image" src="../profile_picture/{{ rowInfo.zID }}">{{ getInfo( rowInfo.zID, "full_name" )}}</a>
         </div>
         <div class="description">
             <p>{{ rowInfo.message|doMention|safe|urlize( 80 ) }}</p>
