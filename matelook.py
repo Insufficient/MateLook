@@ -142,9 +142,11 @@ def viewUsers( user_name=None ):
         cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchall( )
         m_Info = result
-        cur.execute( "SELECT * FROM Notes WHERE zID=? ORDER BY time", [ username[ 0 ] ] )
-        result = cur.fetchall( )
-        n_Info = result
+        sessName = getSess( )
+        if sessName:
+            cur.execute( "SELECT * FROM Notes WHERE zID=? ORDER BY time DESC LIMIT 5", [ sessName ] )
+            result = cur.fetchall( )
+            n_Info = result
 
         con.close( )
     else:
@@ -595,29 +597,6 @@ def mate( mID, option ):
             con.close( )
             return "You cannot unmate a user that is not your mate."
 
-# @app.route( '/mate', methods=[ 'POST' ] )
-# def mate( ):
-#     zID = request.form[ 'zID' ]
-#     mID = request.form[ 'mID' ]
-
-#     zUser = re.findall( r'z[0-9]{7}', zID )   # Sanitize input
-#     mUser = re.findall( r'z[0-9]{7}', mID )   # Sanitize input
-#     if not zUser or not mUser:                      # No user with the username found
-#         return render_template( "error.html", message="Invalid username %s" % escape( user_name ) )
-
-#     con = sql.connect( db )
-#     cur = con.cursor( )
-#     if isMate( zUser[ 0 ], mUser[ 0 ] ):  # Already mates, so remove them.
-#         cur.execute( "DELETE FROM Mate WHERE zID=? AND mateID=?", ( zUser[ 0 ], mUser[ 0 ] ) )
-#         con.commit( )
-#         con.close( )
-#         return "Mate has been deleted."
-#     else:
-#         cur.execute( "INSERT INTO Mate VALUES (?,?)", ( zUser[ 0 ], mUser[ 0 ] ) )
-#         con.commit( )
-#         con.close( )
-#         return "Mate has been added."
-
 """
     Users can view individual posts
 """
@@ -752,6 +731,19 @@ def getInfo( zID, infoName="*" ):
     else:
         return None
 
+""" getNotes( zID )
+    zID         - zID to be searched
+    returns notifications found
+"""
+def getNotes( zID ):
+    n_Info = tuple( )
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT * FROM Notes WHERE zID=? ORDER BY time", [ zID ] )
+    result = cur.fetchall( )
+    n_Info = result
+    return n_Info
+
 """ getPost( tID, type )
     tID     - ID of post/comment/reply
     zID     - zID of user that made this post.
@@ -867,6 +859,7 @@ def main( ):
     app.jinja_env.globals.update( getSess=getSess )
     app.jinja_env.globals.update( dictFromRow=dictFromRow )
     app.jinja_env.globals.update( getPost=getPost )
+    app.jinja_env.globals.update( getNotes=getNotes )
     app.jinja_env.globals.update( isMate=isMate )
     app.jinja_env.filters['doMention'] = doMention
 
@@ -1033,4 +1026,4 @@ def parseDataset( ):
 main( )
 
 if __name__ == "__main__":
-    app.run( debug=True, port=5000, host="127.0.0.1", threaded=True) # 0.0.0.0
+    app.run( debug=True, port=5000, host="127.0.0.1")#, threaded=True) # 0.0.0.0

@@ -9,6 +9,30 @@
             <div class="ui grey secondary menu">
                 {% if sessName %}
                 <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, 'full_name') }}</a>
+                <div class="ui dropdown item">
+                    Notifications
+                    <i class="dropdown icon"></i>
+                    <div class="menu note-drop">
+                        {% for note in nInfo %}
+                        {% set rowInfo = dictFromRow( note ) %}
+                        <div class="ui feed">
+                            <div class="event">
+                                <div class="label">
+                                    <img class="small-picture" src="{{ url_for( 'showProfPict', zID=rowInfo.initiator ) }}">
+                                </div>
+                                <div class="content">
+                                    <div class="date">{{ rowInfo.time|truncate( 16, True, '' ) }}</div>
+                                    <div class="summary">{{ rowInfo.msg|doMention }}</div>
+                                    <div class="meta">
+                                        <a href="{{ rowInfo.URL }}">Context</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <a class="item">Hide</a>
+                    </div>
+                </div>
                 <div class="right menu">
                     <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
                 </div>
@@ -19,7 +43,11 @@
         </div>
     </section>
 
-    <section class="hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
+    <section class="ui sidebar">
+        LOL WHAT?
+    </section>
+
+    <section class="pusher hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
         <div class="ui fluid container">
             <div class="ui grid profile">
                 <div class="four wide column">
@@ -157,14 +185,6 @@
                 </div>
             {% endif %}
         </div>
-    </section>
-
-    <section class="notifications">
-    {% for mate in nInfo %}
-    {% set rowInfo = dictFromRow( mate ) %}
-        <h1>{{ rowInfo.msg|doMention }}</h1>
-        <p>From {{ rowInfo.initiator }}</p>
-    {% endfor %}
     </section>
 
     <section class="content">
@@ -384,6 +404,8 @@
             } );
     	}
     }
+
+    $('.ui.dropdown').dropdown();
     </script>
     {% else %}
         <h1>This profile is private. ;[ </h1>
