@@ -9,6 +9,10 @@ body {
     margin: 0 auto;
 }
 
+.menu.note-drop {
+    padding: 20px !important;
+}
+
 .mate-hover:hover {
     z-index: 9;
 }
