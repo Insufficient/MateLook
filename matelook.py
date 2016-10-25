@@ -623,7 +623,7 @@ def mate( mID, option ):
             <a href="{}">Accept Request</a><br>
             Otherwise, click the link below to decline this request.<br>
             <a href="{}">Decline Request</a>
-            """.format( url_for( 'viewUsers', user_name=zID, _external=true ),      \
+            """.format( url_for( 'viewUsers', user_name=zID, _external=True ),      \
                         getInfo( zID, "full_name" ),                                \
                         url_for( 'mate', mID=zID, option=1, _external=True ),       \
                         url_for( 'mate', mID=zID, option=0, _external=True ) )
