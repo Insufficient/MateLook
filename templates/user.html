@@ -390,37 +390,37 @@
         $( '.edit-info' ).slideToggle( "slow" );
     } );
     $( window ).on("scroll", function( ) {
-        showPost( );
+        var scrollHeight = $(document).height();
+        var scrollPosition = $(window).height() + $(window).scrollTop();
+        if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+            showPost( );
+        }
     });
 
     var postCD = 0;
     function showPost( ) {
-        var scrollHeight = $(document).height();
-    	var scrollPosition = $(window).height() + $(window).scrollTop();
-    	if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
-            if( postCD == 1 ) {
-                console.log( "Waiting for CD.." );
-                return 0;
+        if( postCD == 1 ) {
+            console.log( "Waiting for CD.." );
+            return 0;
+        }
+        postCD = 1;
+        console.log( "Showing more posts!" );
+        $( '.delete_me' ).show( );
+        setTimeout( function( ) { postCD = 0; }, 1000 );
+        $.post(
+            '{{ url_for( "viewPost" ) }}', {
+                zID: '{{ username }}',
+                pageNum: page_Num
+            },
+        function( data ) {
+            $( '.delete_me' ).hide( );
+            if( data == "" ) {
+                console.log( "No more posts!" );
+                postCD = 1;
             }
-            postCD = 1;
-            console.log( "Showing more posts!" );
-            $( '.delete_me' ).show( );
-            setTimeout( function( ) { postCD = 0; }, 1000 );
-            $.post(
-                '{{ url_for( "viewPost" ) }}', {
-                    zID: '{{ username }}',
-                    pageNum: page_Num
-                },
-            function( data ) {
-                $( '.delete_me' ).hide( );
-                if( data == "" ) {
-                    console.log( "No more posts!" );
-                    postCD = 1;
-                }
-                $( '.posts' ).append( data );
-                page_Num += 5;
-            } );
-    	}
+            $( '.posts' ).append( data );
+            page_Num += 5;
+        } );
     }
 
     $('.ui.dropdown').dropdown();
@@ -429,6 +429,7 @@
     </script>
     {% else %}
         <h1>This user has deactivated their account.</h1>
+        <div class="ui button" onclick="window.history.back()">Back</div>
     {% endif %}
     {% endif %}
 </body>

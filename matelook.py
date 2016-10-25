@@ -478,8 +478,8 @@ def begin_recover( ):
     con.commit( )
     # print( "Secret: " + secretFormat[::-1] )
     msg = """You have requested for a password recovery.<br>To complete this
-    process, please go to the link below:
-    {}
+    process, please go to the link below:<br>
+    <a href="{}">Recover Password</a>
     """.format( url_for( 'recover', secret=secretFormat[::-1], _external=True ) )
     sendEmail( uEmail, "Password Recovery", msg )
     return "A recovery link has been sent to your email."
@@ -543,7 +543,7 @@ def auth( ):
                     flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
                     msg = """ Hello {},<br>
                     Welcome to MateLook, please verify your account by clicking on the link below:<br>
-                    {}
+                    <a href="{}">Verify Account</a>
                     """.format( formName,  url_for( 'verify', zID=formzID[ ::-1 ], _external=True ) )
                     sendEmail( formEmail, "Account Verification", msg )
                     return redirect( url_for( 'auth' ) )
@@ -616,13 +616,18 @@ def mate( mID, option ):
 
             con.commit( )
             con.close( )
-            msg = """{} has sent you a mate request.<br>
+            msg = """<a href="{}">{}</a> has sent you a mate request.<br>
+            You may wish to view the users' profile here:<br>
+            <a href="{}"></a>
             If you wish to accept this request, visit the link below:<br>
-            {}<br>
+            <a href="{}">Accept Request</a><br>
             Otherwise, click the link below to decline this request.<br>
-            {}
-            """.format( zID, url_for( 'mate', mID=zID, option=1, _external=True ), \
-                        url_for( 'mate', mID=zID, option=0, _external=True) )
+            <a href="{}">Decline Request</a>
+            """.format( url_for( 'viewUsers', user_name=zID, _external=true ),      \
+                        getInfo( zID, "full_name" ),                                \
+                        url_for( 'mate', mID=zID, option=1, _external=True ),       \
+                        url_for( 'mate', mID=zID, option=0, _external=True ) )
+
             if getInfo( mUser[ 0 ], "emailReq1" ):
                 sendEmail( getInfo( mUser[ 0 ], "email" ), "MateLook - Mate Request", msg )
 
