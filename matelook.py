@@ -622,6 +622,11 @@ def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'auth' ) )
 
+# sneaky 
+""" SELECT pID FROM Post WHERE Message LIKE '%z50%' UNION 
+    SELECT pID FROM Reply WHERE Message LIKE '%z50%' UNION
+    SELECT pID FROM Comment WHERE Message LIKE '%50%'"""
+
 """
     Render posts (AJAX)
 """
@@ -642,13 +647,27 @@ def viewPost( ):
         con = sql.connect( db )
         con.row_factory = sql.Row
         cur = con.cursor( )
+
         cur.execute( "SELECT mateID FROM Mate WHERE zID = ?", [ username[ 0 ] ] )
         results = cur.fetchall( )
         string = [', '.join(w) for w in results]
         string = '","'.join( string )
         mates = "(\"{}\",\"{}\")".format( username[ 0 ], string )
-        # Get their mates and store it into a string.
-        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR MESSAGE LIKE ? ORDER BY time DESC LIMIT {}, 5".format( mates, pageNum ), [ "%" + username[ 0 ] + "%" ] )
+        # Get their mates and store it into a string to be used in the SQL query.
+
+        # Obtain postIDs of replies and comments where a user is mentioned.
+        userQuery = "%" + username[ 0 ] + "%"
+        cur.execute( "SELECT pID FROM Reply WHERE Message LIKE ? UNION SELECT pID FROM Comment WHERE Message LIKE ?", ( userQuery, userQuery ) )
+        results = cur.fetchall( )
+        string = [', '.join(w) for w in results]
+        string = '","'.join( string )
+        sPosts = "(\"{}\")".format( string )
+        logger = logging.getLogger( __name__ )
+        logger.info( "\t[zID: %s] Related pIDs: %s\n", username[ 0 ], sPosts )
+
+        # cur.execute( "SELECT * FROM Post WHERE zID IN {} OR Message LIKE ? ORDER BY time DESC LIMIT {}, 5".format( mates, pageNum ), [ "%" + username[ 0 ] + "%" ] )
+        cur.execute( "SELECT * FROM Post WHERE zID IN {} OR Message LIKE ? OR pID IN {} ORDER BY time DESC LIMIT {}, 5".format( mates, sPosts, pageNum ), [ "%" + username[ 0 ] + "%" ] )
+        # logger.info( "SELECT * FROM Post WHERE zID IN {} OR Message LIKE ? OR pID IN { } ORDER BY time DESC LIMIT {}, 5", mates, userQuery, sPosts, )
         result = cur.fetchall( )
         p_Info = result
 
@@ -782,8 +801,8 @@ def sendEmail( receiver, subject, message ):
 
     try:
         logger.info( "\tEmail Sent.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
-        # smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
-        # smtpObj.sendmail(sender, receiver, msg.as_string( ) )
+        smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
+        smtpObj.sendmail(sender, receiver, msg.as_string( ) )
     except smtplib.SMTPException:
         logger.info( "\tUnable to send email.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
 
