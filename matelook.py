@@ -230,6 +230,36 @@ def editInfo( ):
     return redirect( url_for( 'viewUsers', user_name=zID ) )
 
 """
+    Users can deactivate their account.
+"""
+@app.route( '/deactivate_account', methods=[ 'GET', 'POST' ] )
+def deact_acc( ):
+    if request.method == 'POST':
+        formPass = request.form[ 'password' ]
+        sess = getSess( )
+
+        if not sess:
+            return render_template( "error0.html", message="You cannot deactivate or reactivate your account when you are not logged in." )
+
+        con = sql.connect( db )
+        cur = con.cursor( )
+        cur.execute( "SELECT zID FROM User WHERE zID=? AND password=?", ( sess, formPass ) )
+        results = cur.fetchone( )
+        if not results:
+            flash( "You have entered an incorrect password." )
+            return render_template( "deleteAcc.html" )
+
+        isPrivate = getInfo( sess, "private" )
+        isPrivate = int( not isPrivate )
+        cur.execute( "UPDATE User SET private=? WHERE zID=?", ( isPrivate, sess ) )
+        con.commit( )
+        con.close( )
+
+        return redirect( url_for( 'auth' ) )
+
+    else:
+        return render_template( 'disableAcc.html' )
+"""
     Users can completely delete their account.
 """
 @app.route( '/delete_account', methods=[ 'GET', 'POST'] )
@@ -654,8 +684,8 @@ def logout( ):
     session.pop( 'username', None )
     return redirect( url_for( 'auth' ) )
 
-# sneaky 
-""" SELECT pID FROM Post WHERE Message LIKE '%z50%' UNION 
+# sneaky
+""" SELECT pID FROM Post WHERE Message LIKE '%z50%' UNION
     SELECT pID FROM Reply WHERE Message LIKE '%z50%' UNION
     SELECT pID FROM Comment WHERE Message LIKE '%50%'"""
 

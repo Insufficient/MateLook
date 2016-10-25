@@ -167,7 +167,11 @@
             </form>
             <h1>Account Settings</h1>
             <a href="{{ url_for( 'delete_acc' ) }}"><button class="ui button red">Delete Account</button></a>
-            <a href="{{ url_for( 'disable_acc' ) }}"><button class="ui button red">Disable Account</button></a>
+            {% if uInfo.private %}
+            <a href="{{ url_for( 'deact_acc' ) }}"><button class="ui button green">Reactivate Account</button></a>
+            {% else %}
+            <a href="{{ url_for( 'deact_acc' ) }}"><button class="ui button red">Deactivate Account</button></a>
+            {% endif %}
         </div>
     </section>
     {% endif %}
@@ -358,8 +362,6 @@
                     parent: $( '.action-create' ).data( "parent" ),
                     type: $( '.action-create' ).data( "type" ) },
             function( data ) {
-                // console.log( "Reponse: " + data );
-                // console.log( "Message Sent?" );
                 location.reload( );
             } );
         }
@@ -387,12 +389,10 @@
     $( '.profile-edit' ).on( 'click', function ( ) {
         $( '.edit-info' ).slideToggle( "slow" );
     } );
-
     $( window ).on("scroll", function( ) {
         showPost( );
     });
 
-    showPost( );
     var postCD = 0;
     function showPost( ) {
         var scrollHeight = $(document).height();
@@ -425,10 +425,10 @@
 
     $('.ui.dropdown').dropdown();
     $('.ui.checkbox').checkbox();
-
+    showPost( );
     </script>
     {% else %}
-        <h1>This profile is private. ;[ </h1>
+        <h1>This user has deactivated their account.</h1>
     {% endif %}
     {% endif %}
 </body>

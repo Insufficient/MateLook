@@ -1,0 +1,41 @@
+{% include 'header.html' %}
+<body>
+    <div class="ui fluid container login-page">
+    {% if getSess( ) == None %}
+    <h1>You cannot attempt to delete an account without being logged in.</h1>
+    {% else %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="ui error message">
+                <div class="header">Whoopsy!</div>
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <h1 class="app-name centered">MateLook</h1>
+        <form class="ui large form intro-login" action="{{ url_for( 'deact_acc' ) }}" method="POST">
+            <h2>Account Deactivation</h2>
+            <p>Warning: Your account will be deactivated and your profile cannot be viewed by other users.
+            <br>However, your posts/comments and replies will still be visible.</p>
+            <div class="field">
+                <label>zID</label>
+                <input class="zID-field" type="text" name="zID" placeholder="z5555555" required value="{{ user }}">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="*****" required value="{{ pw }}">
+            </div>
+            {% if getSess( ) != None and getInfo( getSess( ), "private" ) %}
+            <input class="ui green button" name="action" type="submit" value="Rectivate">
+            {% else %}
+            <input class="ui red button" name="action" type="submit" value="Deactivate">
+            {% endif %}
+        </form>
+    {% endif %}
+    </div>
+</body>
+</html>
