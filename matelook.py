@@ -617,8 +617,6 @@ def mate( mID, option ):
             con.commit( )
             con.close( )
             msg = """<a href="{}">{}</a> has sent you a mate request.<br>
-            You may wish to view the users' profile here:<br>
-            <a href="{}"></a>
             If you wish to accept this request, visit the link below:<br>
             <a href="{}">Accept Request</a><br>
             Otherwise, click the link below to decline this request.<br>
