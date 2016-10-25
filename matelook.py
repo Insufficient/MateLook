@@ -28,6 +28,38 @@ def allowed_file( filename ):
            filename.rsplit( '.', 1 )[ 1 ] in ALLOWED_EXTENSIONS
 
 """
+    Users can update their email preferences
+"""
+@app.route( '/emailPref', methods=[ 'POST' ] )
+def emailPref( ):
+    if request.method == 'POST':
+        logger = logging.getLogger( __name__ )
+        logger.info( '\t[Request: %s]', request.form )
+        zID = request.form.get( 'zID' )
+        emailReq1 = request.form.get( 'emailReq1' )
+        emailReq2 = request.form.get( 'emailReq2' )
+        # emailReq1 = emailReq1.replace( "on", '1' )
+        # emailReq2 = emailReq2.replace( "on", '1' )
+
+        con = sql.connect( db )
+        cur = con.cursor( )
+        if emailReq1:
+            cur.execute( "UPDATE User SET emailReq1='1' WHERE zID=?", [ zID ] )
+        else:
+            cur.execute( "UPDATE User SET emailReq1='0' WHERE zID=?", [ zID ] )
+        if emailReq2:
+            cur.execute( "UPDATE User SET emailReq2='1' WHERE zID=?", [ zID ] )
+        else:
+            cur.execute( "UPDATE User SET emailReq2='0' WHERE zID=?", [ zID ] )
+        con.commit( )
+        # logger.info( "\temailReq1: %d, emailReq2: %d", eReq1, eReq2 )
+        return redirect( url_for( 'auth' ) )
+
+    else:
+        return redirect( url_for( 'auth' ) )
+
+
+"""
     Users can upload a profile or background picture.
 """
 @app.route( '/uploadPicture', methods=['GET', 'POST'] )
@@ -667,7 +699,7 @@ def viewPost( ):
 
         # cur.execute( "SELECT * FROM Post WHERE zID IN {} OR Message LIKE ? ORDER BY time DESC LIMIT {}, 5".format( mates, pageNum ), [ "%" + username[ 0 ] + "%" ] )
         cur.execute( "SELECT * FROM Post WHERE zID IN {} OR Message LIKE ? OR pID IN {} ORDER BY time DESC LIMIT {}, 5".format( mates, sPosts, pageNum ), [ "%" + username[ 0 ] + "%" ] )
-        # logger.info( "SELECT * FROM Post WHERE zID IN {} OR Message LIKE ? OR pID IN { } ORDER BY time DESC LIMIT {}, 5", mates, userQuery, sPosts, )
+
         result = cur.fetchall( )
         p_Info = result
 
