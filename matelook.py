@@ -5,7 +5,7 @@ from flask import Flask, session, escape, request, url_for, redirect,           
                     render_template, Markup, flash, send_file
 from collections import defaultdict
 from werkzeug.utils import secure_filename
-from lxml.html.clean import clean_html
+from lxml.html.clean import clean_html, Cleaner
 import re, sys, os, glob, jinja2, io
 import sqlite3 as sql
 import datetime, logging, smtplib
@@ -909,6 +909,12 @@ def notify( zID, initiator, nType, URL ):
     con.commit( )
     con.close( )
 
+""" sanitise( zID )
+    zID     - zID to be sanitised
+"""
+def sanitise( zID ):
+    zRe = re.compile( r'z[0-9]{7}' )
+    return zRe.match( zID )
 """
     doMention converts a message string into HTML Markup.
     (\n => <br>)
@@ -920,13 +926,19 @@ def doMention( longString ):
     # longString = re.sub( r'\n', '<br/>', str( longString ), flags=re.DEBUG )
     longString = longString.replace( r'\n', '<br>' )
     longString = longString.replace( r'\\n', '<br>' )
-    longString = clean_html( str( longString ) )
+    cleaner = Cleaner( page_structure=False )
+    longString = cleaner.clean_html( str( longString ) )
     longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', longString )
     matches = re.findall( r'>@(z[0-9]{7})<', longString )
     for match in matches:
         swapFrom = ">@{}<".format( match )
         swapInto = ">@{}<".format( getInfo( match, "full_name" ) )
         longString = re.sub( swapFrom, swapInto, longString )
+    # Embed images!
+    imgRe = re.compile( r'([^\>]*http(:?s)*[^\s]+\/[\w]+\.(?:jpg|png|gif|jpeg))' )
+    longString = re.sub( imgRe, r'<img class="embed-img" src="\1">', longString )
+    vidRe = re.compile( r'([^\>]*http(?:s)*[^\s\>\<]+(:?(:?vimeo\.com\/[0-9]+)|(:?youtube\.com\/watch[^\s\>\<]+)))' )
+    longString = re.sub( vidRe, r'<iframe src="\1"></iframe>', longString )
     return Markup( longString )
 
 """
