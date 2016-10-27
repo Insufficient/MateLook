@@ -43,11 +43,7 @@
         </div>
     </section>
 
-    <section class="ui sidebar">
-        LOL WHAT?
-    </section>
-
-    <section class="pusher hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
+    <section class="hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
         <div class="ui fluid container">
             <div class="ui grid profile">
                 <div class="four wide column">
@@ -419,7 +415,7 @@
                 postCD = 1;
             }
             $( '.posts' ).append( data );
-            $('.ui.embed').embed();
+            $( '.description p' ).linkify( );
             page_Num += 5;
         } );
     }

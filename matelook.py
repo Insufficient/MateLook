@@ -937,8 +937,8 @@ def doMention( longString ):
     # Embed images!
     imgRe = re.compile( r'([^\>]*http(:?s)*[^\s]+\/[\w]+\.(?:jpg|png|gif|jpeg))' )
     longString = re.sub( imgRe, r'<img class="embed-img" src="\1">', longString )
-    vidRe = re.compile( r'([^\>]*http(?:s)*[^\s\>\<]+(:?(:?vimeo\.com\/[0-9]+)|(:?youtube\.com\/watch[^\s\>\<]+)))' )
-    longString = re.sub( vidRe, r'<div class="ui embed" data-url="\1"></div>', longString )
+    vidRe = re.compile( r'([^\>]*http(?:s)*[^\s\>\<]+(:?youtube\.com\/embed\/[^\s\>\<]+))' )
+    longString = re.sub( vidRe, r'<iframe class="embed-vid" src="\1"></iframe>', longString )
     return Markup( longString )
 
 """
@@ -957,6 +957,7 @@ def main( ):
     app.jinja_env.globals.update( getPost=getPost )
     app.jinja_env.globals.update( getNotes=getNotes )
     app.jinja_env.globals.update( isMate=isMate )
+
     app.jinja_env.filters['doMention'] = doMention
 
     # logger = logging.getLogger( __name__ )
