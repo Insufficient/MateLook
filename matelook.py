@@ -28,6 +28,42 @@ def allowed_file( filename ):
            filename.rsplit( '.', 1 )[ 1 ] in ALLOWED_EXTENSIONS
 
 """
+    Users can update their privacy settings
+"""
+@app.route( '/privPref', methods=[ 'POST' ] )
+def privPref( ):
+    if request.method == 'POST':
+        zID = request.form.get( 'zID' )
+        priv1 = request.form.get( 'priv1' )
+        priv2 = request.form.get( 'priv2' )
+        priv3 = request.form.get( 'priv3' )
+        priv4 = request.form.get( 'priv4' )
+
+        con = sql.connect( db )
+        cur = con.cursor( )
+        if priv1:
+            cur.execute( "UPDATE User SET priv1='1' WHERE zID=?", [ zID ] )
+        else:
+            cur.execute( "UPDATE User SET priv1='0' WHERE zID=?", [ zID ] )
+        if priv2:
+            cur.execute( "UPDATE User SET priv2='1' WHERE zID=?", [ zID ] )
+        else:
+            cur.execute( "UPDATE User SET priv2='0' WHERE zID=?", [ zID ] )
+        if priv3:
+            cur.execute( "UPDATE User SET priv3='1' WHERE zID=?", [ zID ] )
+        else:
+            cur.execute( "UPDATE User SET priv3='0' WHERE zID=?", [ zID ] )
+        if priv4:
+            cur.execute( "UPDATE User SET priv4='1' WHERE zID=?", [ zID ] )
+        else:
+            cur.execute( "UPDATE User SET priv4='0' WHERE zID=?", [ zID ] )
+        con.commit( )
+        con.close( )
+
+    return redirect( url_for( 'auth' ) )
+
+
+"""
     Users can update their email preferences
 """
 @app.route( '/emailPref', methods=[ 'POST' ] )
@@ -38,8 +74,6 @@ def emailPref( ):
         zID = request.form.get( 'zID' )
         emailReq1 = request.form.get( 'emailReq1' )
         emailReq2 = request.form.get( 'emailReq2' )
-        # emailReq1 = emailReq1.replace( "on", '1' )
-        # emailReq2 = emailReq2.replace( "on", '1' )
 
         con = sql.connect( db )
         cur = con.cursor( )
@@ -52,6 +86,7 @@ def emailPref( ):
         else:
             cur.execute( "UPDATE User SET emailReq2='0' WHERE zID=?", [ zID ] )
         con.commit( )
+        con.close( )
         # logger.info( "\temailReq1: %d, emailReq2: %d", eReq1, eReq2 )
         return redirect( url_for( 'auth' ) )
 
@@ -204,14 +239,13 @@ def editInfo( ):
     home_suburb = request.form[ 'home_suburb' ]
     program = request.form[ 'program' ]
     blurb = request.form[ 'blurb' ]
+    newPass = request.form.get( 'password2' )
 
     if not zID or not full_name or not email or not password:
-        flash( "zID, full name, email and password are all required." )
-        return redirect( url_for( 'viewUsers', user_name=zID ) )
+        return render_template( 'error0.html', message="zID, full name, email and password are all required." )
 
     if getSess( ) != zID:
-        flash( "You cannot edit another users' information." )
-        return redirect( url_for( 'viewUsers', user_name=zID ) )
+        return render_template( 'error0.html', message="You cannot edit another users' information." )
 
 
     con = sql.connect( db )
@@ -222,10 +256,13 @@ def editInfo( ):
         flash( "You have entered the incorrect password." )
         return redirect( url_for( 'viewUsers', user_name=zID ) )
 
-    cur.execute( "UPDATE User SET zID=?, full_name=?, email=?, birthday=?,      \
+    cur.execute( "UPDATE User SET full_name=?, email=?, birthday=?,             \
                     home_suburb=?, program=?, blurb=? WHERE zID=?",             \
-                    ( zID, full_name, email, birthday, home_suburb, program,    \
+                    ( full_name, email, birthday, home_suburb, program,         \
                     blurb, zID ) )
+
+    if newPass != None and len( newPass ) > 2:
+        cur.execute( "UPDATE User SET password=? WHERE zID=?", ( newPass, zID ) )
     con.commit( )
     return redirect( url_for( 'viewUsers', user_name=zID ) )
 
@@ -247,10 +284,10 @@ def deact_acc( ):
         results = cur.fetchone( )
         if not results:
             flash( "You have entered an incorrect password." )
-            return render_template( "deleteAcc.html" )
+            return render_template( "disableAcc.html" )
 
         isPrivate = getInfo( sess, "private" )
-        isPrivate = int( not isPrivate )
+        isPrivate = int( not isPrivate )    # Invert private status
         cur.execute( "UPDATE User SET private=? WHERE zID=?", ( isPrivate, sess ) )
         con.commit( )
         con.close( )
@@ -537,8 +574,8 @@ def auth( ):
             result = cur.fetchone( )
             if not result:
                 try:
-                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", ( \
-                    formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0 ) )
+                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", ( \
+                    formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0, 0, 1, 0, 0 ) )
                     con.commit( )
                     flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
                     msg = """ Hello {},<br>
@@ -1123,4 +1160,4 @@ def parseDataset( ):
 main( )
 
 if __name__ == "__main__":
-    app.run( debug=True, port=5000, host="0.0.0.0")#, threaded=True) # 0.0.0.0
+    app.run( debug=True, port=5000, host="0.0.0.0") #, threaded=True) # 0.0.0.0

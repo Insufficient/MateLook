@@ -138,8 +138,8 @@ body {
 }
 
 .edit-info {
-    padding-bottom: 15px;
-    padding-top: 15px;
+    padding-bottom: 50px;
+    padding-top: 50px;
 }
 
 .intro {
@@ -150,6 +150,9 @@ body {
 }
 
 .ui.large.form.intro-login {
+    padding: 20px;
+    background-color: #FFF;
+    border-radius: 8px;
     max-width: 450px;
     margin: 0 auto;
 }

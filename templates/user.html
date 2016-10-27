@@ -1,9 +1,10 @@
 {% include 'header.html' %}
 <body>
     {% if uInfo %}
-    <!-- Check if person is a mate! -->
+
     {% set sessName = getSess( ) %}
     {% if uInfo.private != 1 or sessName == username %}
+    {% if uInfo.priv1 == 0 or sessName == username or uInfo.priv1 == 1 and isMate( uInfo.zID, sessName ) %}
     <section class="page-header">
         <div class="ui fluid container">
             <div class="ui grey secondary menu">
@@ -52,8 +53,11 @@
                 <div class="four wide column">
                     {% if uInfo %}
                     <h2>{{ uInfo.full_name }}</h2>
+                    {% if uInfo.priv2 == 0 or sessName == uInfo.zID or uInfo.priv2 == 1 and isMate( uInfo.zID, sessName ) %}
                     <h3 class="profile-program">{{ uInfo.program }}</h3>
                     <p>{{ uInfo.birthday }}</p>
+                    <p>{{ uInfo.home_suburb }}
+                    {% endif %}
                     {% endif %}
                     {% if sessName == username %}
                     <div class="ui button profile-edit">Edit Profile</div>
@@ -63,9 +67,11 @@
                     <a href="{{ url_for( 'mate', mID=uInfo.zID, option=1 ) }}"><div class="ui button">Add Mate</div></a>
                     {% endif %}
                 </div>
+                {% if uInfo.priv2 == 0 or sessName == uInfo.zID or uInfo.priv2 == 1 and isMate( uInfo.zID, sessName ) %}
                 <div class="four wide column">
                     {{ uInfo.blurb|doMention|safe }}
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -87,44 +93,52 @@
     {% if sessName == username %}
     <section class="edit-info hidden">
         <div class="ui text container">
-            <h1>Profile Information</h1>
+            <h2 class="ui dividing header">Profile Information</h2>
             <form class="ui form" action="{{ url_for( 'editInfo' ) }}" method="POST">
+                <div class="fields">
                 <div class="field">
                     <label>zID</label>
                     <input type="text" name="zID" required readonly="readonly" value="{{ username }}">
                 </div>
-                <div class="field">
-                    <label>Password (please re-enter your password)</label>
-                    <input type="password" name="password" required >
+                    <div class="field">
+                        <label>Password (current password)</label>
+                        <input type="password" name="password" required >
+                    </div>
+                    <div class="field">
+                        <label>New Password (if you wish to change your password.)</label>
+                        <input type="password" name="password2">
+                    </div>
                 </div>
                 <div class="field email">
                     <label>Email</label>
                     <input type="text" name="email" required value="{{ uInfo.email }}">
                 </div>
-                <div class="field full-name">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" required value="{{ uInfo.full_name }}">
-                </div>
-                <div class="field">
-                    <label>Birthday</label>
-                    <input type="text" name="birthday" value="{{ uInfo.birthday }}">
-                </div>
-                <div class="field">
-                    <label>Program</label>
-                    <input type="text" name="program" value="{{ uInfo.program }}">
+                <div class="fields">
+                    <div class="field full-name">
+                        <label>Full Name</label>
+                        <input type="text" name="full_name" required value="{{ uInfo.full_name }}">
+                    </div>
+                    <div class="field">
+                        <label>Birthday</label>
+                        <input type="text" name="birthday" value="{{ uInfo.birthday }}">
+                    </div>
+                    <div class="field">
+                        <label>Program</label>
+                        <input type="text" name="program" value="{{ uInfo.program }}">
+                    </div>
+                    <div class="field">
+                        <label>Home Suburb</label>
+                        <input type="text" name="home_suburb" value="{{ uInfo.home_suburb }}">
+                    </div>
                 </div>
                 <div class="field">
                     <label>Blurb</label>
-                    <input type="text" name="blurb" value="{{ uInfo.blurb }}">
-                </div>
-                <div class="field">
-                    <label>Home Suburb</label>
-                    <input type="text" name="home_suburb" value="{{ uInfo.home_suburb }}">
+                    <textarea name="blurb">{{ uInfo.blurb }}</textarea>
                 </div>
                 <input class="ui primary blue button profile-save" name="action" type="submit" value="Save">
                 </input>
             </form>
-            <h1>Email Preferences</h1>
+            <h2 class="ui dividing header">Email Preferences</h2>
             <form class="ui form" action="{{ url_for( 'emailPref' ) }}" method="POST">
                 <input type="text" name="zID" hidden value="{{ username }}">
                 <div class="field">
@@ -141,33 +155,60 @@
                 </div>
                 <input class="ui primary blue button profile-save" name="action" type="submit" value="Save">
             </form>
-            <h1>Profile Picture</h1>
+            <h2 class="ui dividing header">Profile Picture</h2>
             <form class="ui form" action="{{ url_for( 'uploadPic' ) }}" method="POST" enctype=multipart/form-data>
                 <input type=file name=file>
                 <input type="text" name="zID" hidden value="{{ username }}">
                 <input type="text" name="type" hidden value="pPic">
                 <p>Supported file extensions: jpg/jpeg/png</p>
-                <p>Maximum file size: 1MB (1024 KB)</p>
                 <input class="ui primary blue button" type="submit" value="Upload">
-                <input class="ui primary red button" name="action" type="submit" value="Delete Current Picture">
+                <input class="ui secondary red button" name="action" type="submit" value="Delete Current Picture">
             </form>
-            <h1>Profile Background</h1>
+            <h2 class="ui dividing header">Profile Background</h2>
             <form class="ui form" action="{{ url_for( 'uploadPic' ) }}" method="POST" enctype=multipart/form-data>
                 <input type=file name=file>
                 <input type="text" name="zID" hidden value="{{ username }}">
                 <input type="text" name="type" hidden value="pBg">
                 <p>Supported file extensions: jpg/jpeg/png</p>
-                <p>Maximum file size: 1MB (1024 KB)</p>
                 <input class="ui primary blue button" type="submit" value="Upload">
-                <input class="ui primary red button" name="action" type="submit" value="Delete Current Picture">
+                <input class="ui secondary red button" name="action" type="submit" value="Delete Current Picture">
             </form>
-            <h1>Account Settings</h1>
+            <h2 class="ui dividing header">Account Settings</h2>
             <a href="{{ url_for( 'delete_acc' ) }}"><button class="ui button red">Delete Account</button></a>
             {% if uInfo.private %}
             <a href="{{ url_for( 'deact_acc' ) }}"><button class="ui button green">Reactivate Account</button></a>
             {% else %}
             <a href="{{ url_for( 'deact_acc' ) }}"><button class="ui button red">Deactivate Account</button></a>
             {% endif %}
+            <h2 class="ui dividing header">Privacy Settings</h2>
+            <form class="ui form" action="{{ url_for( 'privPref' ) }}" method="POST">
+                <input type="text" name="zID" hidden value="{{ username }}">
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <input class="hidden" tabindex="0" type="checkbox" name="priv1" {% if uInfo.priv1 %}checked{% endif %}>
+                        <label>Only mates can view your profile.</label>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <input class="hidden" tabindex="0" type="checkbox" name="priv2" {% if uInfo.priv2 %}checked{% endif %}>
+                        <label>Only mates can view your details (home suburb, program, birthday)</label>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <input class="hidden" tabindex="0" type="checkbox" name="priv3" {% if uInfo.priv3 %}checked{% endif %}>
+                        <label>Only mates can view your mate-list.</label>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <input class="hidden" tabindex="0" type="checkbox" name="priv4" {% if uInfo.priv4 %}checked{% endif %}>
+                        <label>Only mates can view your post-wall.</label>
+                    </div>
+                </div>
+                <input class="ui primary blue button profile-save" name="action" type="submit" value="Save">
+            </div>
         </div>
     </section>
     {% endif %}
@@ -184,7 +225,7 @@
             </div>
         </div>
     </section>
-
+    {% if uInfo.priv3 == 0 or sessName == uInfo.zID or uInfo.priv3 == 1 and isMate( uInfo.zID, sessName ) %}
     <section class="mates">
         <div class="ui fluid container">
             {% if mInfo %}
@@ -204,6 +245,11 @@
             {% endif %}
         </div>
     </section>
+    {% else %}
+    <div class="ui fluid container">
+        <p>This users' mate-list is only visible to their mates.</p>
+    </div>
+    {% endif %}
 
     <section class="content">
         <div class="ui text container {% if sessName != username %}hidden--force{% endif %}">
@@ -227,9 +273,13 @@
         </div>
 
         <div class="ui text container">
+            {% if uInfo.priv4 == 0 or sessName == uInfo.zID or uInfo.priv4 == 1 and isMate( uInfo.zID, sessName ) %}
             <div class="ui cards posts" id="post_area">
 
             </div>
+            {% else %}
+            <p>This users' post-wall is only visible to their mates.</p>
+            {% endif %}
         </div>
     </section>
     </div>
@@ -425,9 +475,14 @@
     showPost( );
     </script>
     {% else %}
+        <h1>This users' profile is only visible to their mates.</h1>
+        <div class="ui button" onclick="window.history.back()">Back</div>
+    {% endif %}
+    {% else %}
         <h1>This user has deactivated their account.</h1>
         <div class="ui button" onclick="window.history.back()">Back</div>
     {% endif %}
     {% endif %}
+
 </body>
 </html>
