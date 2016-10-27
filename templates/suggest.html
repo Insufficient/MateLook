@@ -1,0 +1,60 @@
+{% include 'header.html' %}
+<body>
+    {% set sessName = getSess( ) %}
+    {% if sessName %}
+    <section class="page-header">
+        <div class="ui fluid container">
+            <div class="ui grey secondary menu">
+                <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, "full_name") }}</a>
+                <div class="right menu">
+                    <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="ui text container">
+            {% for category, message in messages %}
+            <div class="ui error message">
+                <div class="header">Whoopsy!</div>
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+    <div class="ui fluid container">
+        <div class="ui button toggle-reasons">Toggle Reasons</div>
+        <div class="ui centered doubling cards">
+            {% for user in users %}
+            {% if user %}
+            <div class="ui card">
+                <div class="image">
+                <img class="profile-picture" src="{{ url_for( 'showProfPict', zID=user ) }}">
+                </div>
+                <div class="content">
+                    <a class="header" href="{{ url_for( 'viewUsers', user_name=user )}}">{{ getInfo( user, "full_name" ) }}</a>
+                    <div class="description hidden">
+                        Reason: {{ reasons[ user ] }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {% else %}
+    <h1>You can only view mate suggestions when logged in.</h1>
+    <a href="url_for( 'auth' )"><div class="ui button">Login</div></a>
+    {% endif %}
+
+    <script>
+    $( ".toggle-reasons" ).on( 'click', function( ) {
+        $( ".description" ).toggle( );
+    } );
+    </script>
+</body>
+</html>

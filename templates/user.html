@@ -208,7 +208,7 @@
                     </div>
                 </div>
                 <input class="ui primary blue button profile-save" name="action" type="submit" value="Save">
-            </div>
+            </form>
         </div>
     </section>
     {% endif %}
@@ -353,11 +353,12 @@
     $( '.ui.modal' ).modal( );
 
     $( '.search-field').keypress( function( evt ) {
+        // evt.preventDefault();
         var e = evt || event;
         var code = e.keyCode || e.which;
         console.log( 'Text:' + $( '.search-field' ).val( ) );
         if( code == 13 ) {
-            if( $( '.search-field' ).val( ).length > 2 ) {
+            if( $( '.search-field' ).val( ).length > 1 ) {
                 $.post(
                     '{{ url_for( "search" ) }}', { search: $( '.search-field' ).val( ) },
                 function( data ) {

@@ -16,7 +16,7 @@ users_dir = "static/dataset-large"
 db = "sql.db"
 
 app = Flask( __name__ )
-app.secret_key = '1@#(!@#IKL!@389123O!@#I!@O#8912LK!@@SSZXZK)'
+app.secret_key = os.urandom( 32 )
 # app.config[ 'MAX_CONTENT_LENGTH' ] = 1 * 1024 * 1024        # 512 KB
 
 
@@ -180,6 +180,80 @@ def verify( zID ):
         return redirect( url_for( 'viewUsers', user_name=username[ 0 ] ) )
 
 """
+    View Mate Suggestions
+"""
+@app.route( '/mate_suggestions' )
+def mateSuggest( ):
+    if not getSess( ):
+        flash( "You need to be logged in to view suggestions" )
+        return redirect( url_for( 'auth' ) )
+
+    zID = getSess( )
+    con = sql.connect( db )
+    cur = con.cursor( )
+    cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ zID ] )
+    results = cur.fetchall( )
+    string = [', '.join(w) for w in results]
+    string = '","'.join( string )
+    sCourses = "(\"{}\")".format( string )
+    logger = logging.getLogger( __name__ )
+    cur.execute( "SELECT mateID FROM Mate WHERE zID=?", [ zID ] )
+    results = cur.fetchall( )
+    string = [', '.join(w) for w in results]
+    string = '","'.join( string )
+    sMates = "(\"{}\")".format( string )
+    # logger.info( "\t[zID: %s] Mates: %s\n", zID, sMates )
+
+    mateSugg = defaultdict( lambda: 0 )
+    reasons = defaultdict( lambda: '' )
+    # Search for mates of mates
+    cur.execute( "SELECT mateID FROM Mate WHERE zID IN {}".format( sMates ) )
+    results = cur.fetchall( )
+    for row in results:
+        mateSugg[ row[ 0 ] ] += 2
+        reasons[ row[ 0 ] ] += "Mate of Mate, "
+
+    # Search for users with similar courses
+    if sCourses:
+        cur.execute( "SELECT zID, COUNT(zID) FROM Course WHERE courseID IN {} GROUP BY zID".format( sCourses ) )
+        results = cur.fetchall( )
+        for row in results:
+            mateSugg[ row[ 0 ] ] = row[ 1 ] # factor 2?
+            reasons[ row[ 0 ] ] += "Similar courses ({}), ".format( row[ 1 ] )
+
+    # Search for users living in the same suburb
+    userSub = getInfo( zID, "home_suburb" )
+    if userSub:
+        cur.execute( "SELECT zID FROM User WHERE home_suburb=?", [ userSub ] )
+        results = cur.fetchall( )
+        for row in results:
+            mateSugg[ row[ 0 ] ] += 4   # factor 4?
+            reasons[ row[ 0 ] ] += "Same suburb, "
+
+    # Search for users in the same program.
+    userProg = getInfo( zID, "program" )
+    if userProg:
+        cur.execute( "SELECT zID FROM User WHERE program=?", [ userProg ] )
+        results = cur.fetchall( )
+        for row in results:
+            mateSugg[ row[ 0 ] ] += 4   # factor 3
+            reasons[ row[ 0 ] ] += "Same program, "
+
+
+    del mateSugg[ zID ]   # Remove themselves from suggestions.
+    # Debug print suggestions
+    for user in sorted( mateSugg, key=mateSugg.get, reverse=True ):
+        # Remove them from suggestions if they are already friends
+        # Remove them if they have scores of lesser than 0.5 of the suggestions
+        if( isMate( zID, user ) or mateSugg[ user ] < 3 ):
+            del mateSugg[ user ]    # Remove them from suggestions if they are already friends
+            continue
+        logger.info( "\t[Mate Suggest] %s[%d] - %s", user, mateSugg[ user ], reasons[ user ] )
+
+    con.close( )
+    return render_template( "suggest.html", users=sorted( mateSugg, key=mateSugg.get, reverse=True ), reasons=reasons )
+
+"""
     View a user's profile page.
 """
 @app.route( '/users/<user_name>' )
@@ -198,6 +272,7 @@ def viewUsers( user_name=None ):
         con = sql.connect( db )
         con.row_factory = sql.Row
         cur = con.cursor( )
+
         cur.execute( "SELECT * FROM User WHERE zID=?", [ username[ 0 ] ] )
         result = cur.fetchone( )
         u_Info = result
@@ -219,9 +294,6 @@ def viewUsers( user_name=None ):
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, mInfo=m_Info, nInfo=n_Info )
-
-# Sneaky
-# SELECT zID, courseID FROM Course group by courseID having COUNT(courseID) > 1
 
 """
     Edit a user's information
@@ -454,7 +526,7 @@ def create( ):
 @app.route('/search', methods=['POST'] )
 def search( ):
     searchQuery = request.form[ 'search' ]
-    if searchQuery != None and len( searchQuery ) > 2:
+    if searchQuery != None and len( searchQuery ) > 1:
         u_Info = defaultdict( lambda: None )
         p_Info = defaultdict( lambda: None )
         c_Info = defaultdict( lambda: None )
@@ -482,7 +554,7 @@ def search( ):
         con.close( )
         return render_template( "search.html", uInfo=u_Info, pInfo=p_Info, cInfo=c_Info, rInfo=r_Info )
     else:
-        flash( "Please enter at least three characters to search." )
+        flash( "Please enter at least two characters to search." )
         return render_template( "search.html" )
 
 """
@@ -575,7 +647,7 @@ def auth( ):
             if not result:
                 try:
                     cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", ( \
-                    formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0, 0, 1, 0, 0 ) )
+                    formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0, 0, 0, 0, 0 ) )
                     con.commit( )
                     flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
                     msg = """ Hello {},<br>
