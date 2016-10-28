@@ -579,11 +579,13 @@ def begin_recover( ):
 
     formUser = re.findall( r'z[0-9]{7}', zID )     # Store only zID
     if not formUser:
-        return "You must enter a valid zID. E.g: z5555555"
+        flash( "You must enter a valid zID. E.g: z5555555" )
+        return redirect( url_for( 'auth' ) )
     formzID = formUser[ 0 ]
 
     if getInfo( formzID, "zID" ) == None:
-        return "The user does not exist."
+        flash( "The user does not exist." )
+        return redirect( url_for( 'auth' ) )
 
     dDate = datetime.datetime.now( )
     secretFormat = dDate.strftime( "%m%I%B%M%S%p" )
@@ -600,7 +602,8 @@ def begin_recover( ):
     <a href="{}">Recover Password</a>
     """.format( url_for( 'recover', secret=secretFormat[::-1], _external=True ) )
     sendEmail( uEmail, "Password Recovery", msg )
-    return "A recovery link has been sent to your email."
+    flash( "A recovery link has been sent to your email." )
+    return redirect( url_for( 'auth' ) )
 
 @app.route( '/recover/<secret>' )
 def recover( secret ):
@@ -616,7 +619,10 @@ def recover( secret ):
     cur.execute( "DELETE FROM Recover WHERE sID=?", ( reverse, ) )
     con.commit( )
     con.close( )
+    logger = logging.getLogger( __name__ )
+    logger.info( "\tPassword Recovery - %d", zID )
     sendEmail( results[ 1 ], "Password Recovery", msg )
+    flash( "Your password has been sent to your email address." )
     return redirect( url_for( 'auth' ) )
 
 
@@ -697,11 +703,6 @@ def auth( ):
 
 """
     Send mate requests
-
-    TODO:: Make sure everything is working fine.
-        - Add option to accept or reject by adding another parameter in the URL
-    MateReq
-    | zID | mID | accepted |
 """
 @app.route( '/mate/<mID>/<int:option>',  )
 def mate( mID, option ):
