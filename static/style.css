@@ -137,6 +137,13 @@ body {
     margin-top: 0px;
 }
 
+.reasons {
+    padding-top: 25px;
+    padding-bottom: 25px;
+    width: 150px;
+    margin: 0 auto;
+}
+
 .edit-info {
     padding-bottom: 50px;
     padding-top: 50px;
@@ -164,6 +171,16 @@ body {
 
 .mini.ui.grey.button.toggle_comments {
     margin-top: 15px;
+}
+
+.small-picture {
+    width: 80px;
+    height: 80px;
+}
+
+.toggle-sSugg {
+    padding-top: 15px;
+    padding-bottom: 50px;
 }
 
 .mate-picture {

@@ -191,6 +191,7 @@ def mateSuggest( ):
     zID = getSess( )
     con = sql.connect( db )
     cur = con.cursor( )
+
     cur.execute( "SELECT courseID FROM Course WHERE zID=?", [ zID ] )
     results = cur.fetchall( )
     string = [', '.join(w) for w in results]
@@ -250,8 +251,16 @@ def mateSuggest( ):
             continue
         logger.info( "\t[Mate Suggest] %s[%d] - %s", user, mateSugg[ user ], reasons[ user ] )
 
+    con.row_factory = sql.Row
+    cur = con.cursor( )
+    n_Info = tuple( )
+    if zID:
+        cur.execute( "SELECT * FROM Notes WHERE zID=? ORDER BY time DESC LIMIT 5", [ zID ] )
+        result = cur.fetchall( )
+        n_Info = result
+
     con.close( )
-    return render_template( "suggest.html", users=sorted( mateSugg, key=mateSugg.get, reverse=True ), reasons=reasons )
+    return render_template( "suggest.html", users=sorted( mateSugg, key=mateSugg.get, reverse=True ), reasons=reasons, nInfo=n_Info )
 
 """
     View a user's profile page.

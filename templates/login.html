@@ -18,7 +18,7 @@
             <h1 class="app-name centered">MateLook</h1>
             {% if getSess( ) == None %}
             <form class="ui large form intro-login" action="{{ url_for( 'auth' ) }}" method="POST">
-                <h1 class="additional"></h1>
+                <h1 class="additional">Please enter a valid zID.</h1>
 
                 <div class="field">
                     <label>zID</label>
@@ -40,7 +40,9 @@
                 </input>
                 <input class="ui secondary button sign-up" name="action" type="submit" value="Sign Up">
                 </input>
-                <div class="ui red button forgot-pw">Forgot Password</div>
+                <input class="ui red button forgot-pw" name="forgot" type="submit" value="Forgot Password" formaction="{{ url_for( 'begin_recover' ) }}">
+                </input>
+                <!-- <div class="ui red button forgot-pw">Forgot Password</div> -->
                 <div class="ui error message"></div>
             </form>
             {% endif %}
@@ -59,16 +61,7 @@
         } );
 
         $( ".forgot-pw" ).on( 'click', function( ) {
-            console.log( "PRINTED" );
-            if( $( ".zID-field" ).val( ).length == 8 ) {
-                $.post(
-                    '{{ url_for( "begin_recover" ) }}', { zID: $( '.zID-field' ).val( ) },
-                function( data ) {
-                    alert( data );
-                } );
-            } else {
-                $( '.additional' ).text( "Please enter a valid zID." ).toggle( ).hide( 1500 );
-            }
+            $( 'input[name=password]').prop( 'required', false );
         } );
     </script>
 </body>

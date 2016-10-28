@@ -10,6 +10,7 @@
             <div class="ui grey secondary menu">
                 {% if sessName %}
                 <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, 'full_name') }}</a>
+                <a href="{{ url_for( 'mateSuggest' ) }}" class="item">Mate Suggestions</a>
                 <div class="ui dropdown item">
                     Notifications
                     <i class="dropdown icon"></i>
@@ -38,7 +39,7 @@
                     <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
                 </div>
                 {% else %}
-                <a href="{{ url_for( 'auth' ) }}"><button class="ui button">Login</button></a>
+                <a href="{{ url_for( 'auth' ) }}" class="item active">Login</a>
                 {% endif %}
             </div>
         </div>

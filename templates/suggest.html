@@ -5,10 +5,39 @@
     <section class="page-header">
         <div class="ui fluid container">
             <div class="ui grey secondary menu">
-                <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, "full_name") }}</a>
+                {% if sessName %}
+                <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item">{{ getInfo( sessName, 'full_name') }}</a>
+                <a href="{{ url_for( 'mateSuggest' ) }}" class="item active">Mate Suggestions</a>
+                <div class="ui dropdown item">
+                    Notifications
+                    <i class="dropdown icon"></i>
+                    <div class="menu note-drop">
+                        {% for note in nInfo %}
+                        {% set rowInfo = dictFromRow( note ) %}
+                        <div class="ui feed">
+                            <div class="event">
+                                <div class="label">
+                                    <img class="small-picture" src="{{ url_for( 'showProfPict', zID=rowInfo.initiator ) }}">
+                                </div>
+                                <div class="content">
+                                    <div class="date">{{ rowInfo.time|truncate( 16, True, '' ) }}</div>
+                                    <div class="summary">{{ rowInfo.msg|doMention }}</div>
+                                    <div class="meta">
+                                        <a href="{{ rowInfo.URL }}">Context</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <a class="item">Hide</a>
+                    </div>
+                </div>
                 <div class="right menu">
                     <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
                 </div>
+                {% else %}
+                <a href="{{ url_for( 'auth' ) }}" class="item active">Login</a>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -24,15 +53,19 @@
             {% endfor %}
         </div>
     {% endif %}
+
     {% endwith %}
     <div class="ui fluid container">
-        <div class="ui button toggle-reasons">Toggle Reasons</div>
+        <div class="reasons">
+            <div class="ui button toggle-reasons center">Toggle Reasons</div>
+        </div>
         <div class="ui centered doubling cards">
-            {% for user in users %}
-            {% if user %}
+            {% set users_ = users %}
+            {% if users_ %}
+            {% for user in users_ %}
             <div class="ui card">
                 <div class="image">
-                <img class="profile-picture" src="{{ url_for( 'showProfPict', zID=user ) }}">
+                <img class="small-picture" src="{{ url_for( 'showProfPict', zID=user ) }}">
                 </div>
                 <div class="content">
                     <a class="header" href="{{ url_for( 'viewUsers', user_name=user )}}">{{ getInfo( user, "full_name" ) }}</a>
@@ -41,8 +74,13 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
             {% endfor %}
+            {% else %}
+            <h1>Please enter more details in your profile information to view more suggestions!</h1>
+            {% endif %}
+        </div>
+        <div class="reasons">
+            <div class="ui button blue toggle-sSugg">Show More</div>
         </div>
     </div>
 
@@ -55,6 +93,22 @@
     $( ".toggle-reasons" ).on( 'click', function( ) {
         $( ".description" ).toggle( );
     } );
+    var suggIndex = 5;
+    var s_Sugg = $( '.card' );
+
+    $( document ).on( 'click', '.toggle-sSugg', function( ) {
+        suggIndex += 5;
+        showNextSugg( suggIndex );
+    } );
+
+    var showNextSugg = function( sNum ) {
+        if( sNum > s_Sugg.length ) {
+            $( '.toggle-sSugg' ).remove( );
+        }
+        s_Sugg.hide( ).slice( 0, sNum ).show( );
+    }
+    showNextSugg( suggIndex );
+    $('.ui.dropdown').dropdown();
     </script>
 </body>
 </html>
