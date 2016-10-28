@@ -16,7 +16,7 @@ users_dir = "static/dataset-large"
 db = "sql.db"
 
 app = Flask( __name__ )
-app.secret_key = os.urandom( 32 )
+app.secret_key = "AS:DKLASDKaz.c,zxAS>a,szxvc.zA,.asdzkx.AS" #os.urandom( 32 )
 # app.config[ 'MAX_CONTENT_LENGTH' ] = 1 * 1024 * 1024        # 512 KB
 
 
@@ -240,8 +240,8 @@ def mateSuggest( ):
             mateSugg[ row[ 0 ] ] += 4   # factor 3
             reasons[ row[ 0 ] ] += "Same program, "
 
-
-    del mateSugg[ zID ]   # Remove themselves from suggestions.
+    if zID in mateSugg:
+        del mateSugg[ zID ]   # Remove themselves from suggestions.
     # Debug print suggestions
     for user in sorted( mateSugg, key=mateSugg.get, reverse=True ):
         # Remove them from suggestions if they are already friends
