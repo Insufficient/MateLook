@@ -620,7 +620,6 @@ def recover( secret ):
     con.commit( )
     con.close( )
     logger = logging.getLogger( __name__ )
-    logger.info( "\tPassword Recovery - %d", zID )
     sendEmail( results[ 1 ], "Password Recovery", msg )
     flash( "Your password has been sent to your email address." )
     return redirect( url_for( 'auth' ) )
@@ -1047,7 +1046,7 @@ def doMention( longString ):
     longString = longString.replace( r'\\n', '<br>' )
     cleaner = Cleaner( page_structure=False )
     longString = cleaner.clean_html( str( longString ) )
-    longString = re.sub( r'@(z[0-9]{7})', r'<a href="\1">@\1</a>', longString )
+    longString = re.sub( r'@(z[0-9]{7})', r'<a href="../users/\1">@\1</a>', longString )
     matches = re.findall( r'>@(z[0-9]{7})<', longString )
     for match in matches:
         swapFrom = ">@{}<".format( match )
