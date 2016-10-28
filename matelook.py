@@ -660,7 +660,7 @@ def auth( ):
             result = cur.fetchone( )
             if not result:
                 try:
-                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", ( \
+                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", ( \
                     formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0, 0, 0, 0, 0 ) )
                     con.commit( )
                     flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
