@@ -787,6 +787,11 @@ def mate( mID, option ):
 """
 @app.route( '/view/<pID>' )
 def viewIndivPost( pID ):
+
+    username = re.findall( r'z[0-9]{7}', pID )
+    if username:
+        return redirect( url_for( 'viewUsers', user_name=username[ 0 ] ) )
+
     p_Info = tuple( )
     n_Info = tuple( )
     con = sql.connect( db )
