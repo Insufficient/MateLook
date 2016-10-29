@@ -7,6 +7,7 @@ from collections import defaultdict
 from werkzeug.utils import secure_filename
 from lxml.html.clean import clean_html, Cleaner
 import re, sys, os, glob, jinja2, io
+from random import randint
 import sqlite3 as sql
 import datetime, logging, smtplib
 from email.mime.text import MIMEText
@@ -893,7 +894,9 @@ def showProfBg( zID ):
     u_ToShow = os.path.join( users_dir, username[ 0 ] )
     imgLoc = os.path.join( u_ToShow, "bg.jpg" )
     if not os.path.isfile( imgLoc ):
-        imgLoc = os.path.join( users_dir, "default_bg.png" )
+        imgName = "default_bg{}.png".format( randint( 0, 2  ) )
+        #print( imgName )
+        imgLoc = os.path.join( users_dir, imgName )
     return send_file( imgLoc, mimetype='image/jpg' )
 
 """ getSess( )
@@ -989,8 +992,8 @@ def sendEmail( receiver, subject, message ):
 
     try:
         logger.info( "\tEmail Sent.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
-        # smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
-        # smtpObj.sendmail(sender, receiver, msg.as_string( ) )
+        smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
+        smtpObj.sendmail(sender, receiver, msg.as_string( ) )
     except smtplib.SMTPException:
         logger.info( "\tUnable to send email.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
 
