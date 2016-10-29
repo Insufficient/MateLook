@@ -219,7 +219,7 @@ def mateSuggest( ):
         cur.execute( "SELECT zID, COUNT(zID) FROM Course WHERE courseID IN {} GROUP BY zID".format( sCourses ) )
         results = cur.fetchall( )
         for row in results:
-            mateSugg[ row[ 0 ] ] = row[ 1 ] # factor 2?
+            mateSugg[ row[ 0 ] ] = row[ 1 ] # ?
             reasons[ row[ 0 ] ] += "Similar courses ({}), ".format( row[ 1 ] )
 
     # Search for users living in the same suburb
@@ -249,6 +249,9 @@ def mateSuggest( ):
         if( isMate( zID, user ) or mateSugg[ user ] < 3 ):
             del mateSugg[ user ]    # Remove them from suggestions if they are already friends
             continue
+        else:
+            # reasons[ user ] = reasons[ user ][ :-2 ]
+            reasons[ user ] += "Total: [{}]".format( mateSugg[ user ] )
         logger.info( "\t[Mate Suggest] %s[%d] - %s", user, mateSugg[ user ], reasons[ user ] )
 
     con.row_factory = sql.Row
@@ -806,7 +809,7 @@ def viewIndivPost( pID ):
 """
 @app.route( '/logout' )
 def logout( ):
-    session.pop( 'username', None )
+    session[ 'last' ] = session.pop( 'username', None )
     return redirect( url_for( 'auth' ) )
 
 # sneaky

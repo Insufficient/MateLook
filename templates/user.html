@@ -1,5 +1,5 @@
 {% include 'header.html' %}
-<body>
+<body style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
     {% if uInfo %}
 
     {% set sessName = getSess( ) %}
@@ -45,7 +45,7 @@
         </div>
     </section>
 
-    <section class="hero" style="background-image: url( '{{ url_for( 'showProfBg', zID=uInfo.zID ) }}')">
+    <section class="hero">
         <div class="ui fluid container">
             <div class="ui grid profile">
                 <div class="four wide column">
@@ -267,9 +267,11 @@
                     <div class="extra-content">
                         <div class="actions">
                             <button class="ui button green action-create" data-type="Post" data-parent="{{ username }}">Create</button>
+                            <button class="ui button grey action-cancel hidden">Cancel</button>
                         </div>
                     </div>
                 </div>
+                <div class="post-head"></div>
             </div>
         </div>
 
@@ -400,7 +402,7 @@
         console.log( "Parent: " + $( '.action-create' ).data( "parent" ) );
         console.log( "Type: " + $( '.action-create' ).data( "type" ) );
 
-        if( $( '.post-area' ).val( ).length < 5 ) {
+        if( $( '.post-area' ).val( ).length < 2 ) {
             console.log( "Message is too short!" );
         } else {
             $.post(
@@ -415,10 +417,18 @@
         }
     } );
 
+    var postHead = $( '.post-head ')
+    $( '.action-cancel' ).on( 'click', function( ) {
+        $( '.post-area' ).val( '' );
+        $( '.action-cancel' ).hide( );
+        $( '.create-post' ).insertBefore( postHead ).hide( ).show( );
+    } );
+
     $( document ).on( 'click', '.reply', function( ) {
         var me = $( this );
         $( '.create-post' ).insertAfter( this ).hide( ).show( 'slow' );
         $( '.action-create' ).data( "type", me.data( "type" ) ).data( "parent", me.data( "parent" ) );
+        $( '.action-cancel' ).show( );
         $( '.post-header' ).text( "Respond as " + me.data( "type" ) );
     } );
 

@@ -37,6 +37,10 @@ body {
     color: red;
 }
 
+body {
+    background-attachment: fixed;
+}
+
 .ui.fluid.container {
     width: 85%;
 }
@@ -61,7 +65,10 @@ body {
 }
 
 .page-header {
-    background-color: rgba( 0, 0, 0, 0.05 );
+    background-color: #FFF;
+    position: fixed;
+    width: 100%;
+    z-index: 999;
 }
 
 .ui.button.action-create {
@@ -102,7 +109,7 @@ body {
 .search-bar {
     clear: both;
     display: block;
-    background-color: #E0E0E0;
+    background-color: rgba(255,255,255,0.5);
     border-top: 1px solid rgba( 0,0,0,0.1);
     border-bottom: 1px solid rgba( 0,0,0,0.1);
 }
@@ -147,6 +154,7 @@ body {
 .edit-info {
     padding-bottom: 50px;
     padding-top: 50px;
+    background-color: rgba(255,255,255,0.5);
 }
 
 .intro {

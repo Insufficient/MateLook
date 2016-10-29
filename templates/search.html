@@ -43,7 +43,7 @@
             <div class="content">
                 <a class="header" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID )}}">{{ rowInfo.full_name }}</a>
                 <div class="meta">
-                    <span class="date">{{ rowInfo.birthday }}</span>
+                    <!-- <span class="date">{{ rowInfo.birthday }}</span> -->
                 </div>
                 <div class="description">
                     {{ rowInfo.zID }}
@@ -69,7 +69,7 @@
                     <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
                 </div>
                 <div class="actions">
-                    <a class="context" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}#post-{{ rowInfo.pID }}">Context</a>
+                    <a class="context" href="{{ url_for( 'viewIndivPost', pID=rowInfo.pID ) }}">Context</a>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@
                     <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
                 </div>
                 <div class="actions">
-                    <a class="context" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}#post-{{ rowInfo.pID }}">Context</a>
+                    <a class="context" href="{{ url_for( 'viewIndivPost', pID=rowInfo.pID ) }}">Context</a>
                 </div>
             </div>
         </div>
@@ -117,7 +117,7 @@
                     <span class="right floated time">{{ rowInfo.time|truncate( 10, True, '' ) }}</span>
                 </div>
                 <div class="actions">
-                    <a class="context" href="{{ url_for( 'viewUsers', user_name=rowInfo.zID ) }}#post-{{ rowInfo.pID }}">Context</a>
+                    <a class="context" href="{{ url_for( 'viewIndivPost', pID=rowInfo.pID ) }}">Context</a>
                 </div>
             </div>
         </div>
