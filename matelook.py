@@ -262,6 +262,7 @@ def mateSuggest( ):
     con.close( )
     return render_template( "suggest.html", users=sorted( mateSugg, key=mateSugg.get, reverse=True ), reasons=reasons, nInfo=n_Info )
 
+
 """
     View a user's profile page.
 """
@@ -303,6 +304,8 @@ def viewUsers( user_name=None ):
     else:
         return render_template( "error.html", message="User %s does not exist." % escape( user_name ) )
     return render_template( "user.html", username=username[ 0 ], uInfo=u_Info, mInfo=m_Info, nInfo=n_Info )
+
+
 
 """
     Edit a user's information
@@ -453,7 +456,8 @@ def delete( ):
 
         cur.execute( "DELETE FROM {} WHERE {} = ?".format( cType, colName ), [ cParent ] )
     except sql.Error as e:
-        print( "An error occurred!", e.args[ 0 ] )
+        logger = logging.getLogger( __name__ )
+        logger.info( "[SQL] %s", e.args[ 0 ] )
 
     con.commit( )
     con.close( )
@@ -499,12 +503,6 @@ def create( ):
 
     cDate = datetime.datetime.now( )
     cMessage = cMessage.replace( '\n', '\\n' )
-    matches = re.findall( r'@(z[0-9]{7})', cMessage )
-    for match in matches:
-        notify( match, zID, 4, url_for( 'viewUsers', user_name=zID, _external=True ) )
-    # TODO: Individual POSTS
-
-    # We need to preserve newlines and etc somehow.
 
     if colName == 'zID':                            # New post
         cur.execute( "INSERT INTO Post VALUES (?,?,?,?,?,?)", (   \
@@ -524,6 +522,11 @@ def create( ):
                 None, result[ 0 ], cParent, zID, cMessage, cDate ) )
 
     con.commit( )
+    # Do notifications
+    matches = re.findall( r'@(z[0-9]{7})', cMessage )
+    for match in matches:
+        notify( match, zID, 4, url_for( 'viewIndivPost', pID=cParent, _external=True ) )
+
     con.close( )
     return redirect( url_for( 'viewUsers', user_name=cParent ) )
 
@@ -567,10 +570,6 @@ def search( ):
         return render_template( "search.html" )
 
 """
-    Users can view individual posts (/<type>/<id>)
-"""
-
-"""
     Users can recover their passwords
 """
 @app.route( '/begin_recover', methods=[ "POST" ] )
@@ -596,7 +595,6 @@ def begin_recover( ):
     cur.execute( "INSERT INTO Recover VALUES (?,?,?)", ( secretFormat[::-1], \
                     uEmail, uPassw ) )
     con.commit( )
-    # print( "Secret: " + secretFormat[::-1] )
     msg = """You have requested for a password recovery.<br>To complete this
     process, please go to the link below:<br>
     <a href="{}">Recover Password</a>
@@ -786,16 +784,22 @@ def mate( mID, option ):
 @app.route( '/view/<pID>' )
 def viewIndivPost( pID ):
     p_Info = tuple( )
-
+    n_Info = tuple( )
     con = sql.connect( db )
     con.row_factory = sql.Row
     cur = con.cursor( )
     cur.execute( "SELECT * FROM Post WHERE pID=?", [ pID ] )
     results = cur.fetchall( )
     p_Info = results
-    print( p_Info )
+
+    zID = getSess( )
+    if zID:
+        cur.execute( "SELECT * FROM Notes WHERE zID=? ORDER BY time DESC LIMIT 5", [ zID ] )
+        result = cur.fetchall( )
+        n_Info = result
+
     con.close( )
-    return render_template( "singlePost.html", pInfo=p_Info )
+    return render_template( "indivPost.html", pInfo=p_Info, nInfo=n_Info )
 
 """
     Logout page
@@ -962,10 +966,8 @@ def getPost( tID, type="Post" ):
     con.row_factory = sql.Row
     cur = con.cursor( )
     cur.execute( "SELECT * FROM {} WHERE {} = ?".format( type, colID ), ( tID, ) )
-    #print( "SELECT zID, message FROM {} WHERE {} = {}".format( type, colID, tID ) )
-    con.commit( )
     result = cur.fetchall( )
-    # print( result )
+
     con.close( )
     return result
 
@@ -984,8 +986,8 @@ def sendEmail( receiver, subject, message ):
 
     try:
         logger.info( "\tEmail Sent.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
-        smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
-        smtpObj.sendmail(sender, receiver, msg.as_string( ) )
+        # smtpObj = smtplib.SMTP('smtp.cse.unsw.edu.au')
+        # smtpObj.sendmail(sender, receiver, msg.as_string( ) )
     except smtplib.SMTPException:
         logger.info( "\tUnable to send email.\n[Sender]: %s, [Recv]: %s, [Msg] %s", sender, receiver, msg.as_string( ) )
 
@@ -1001,9 +1003,9 @@ def sendEmail( receiver, subject, message ):
     URL         - location to-go-to.
 """
 def notify( zID, initiator, nType, URL ):
-    if not getInfo( zID, "zID" ) or not getInfo( initiator, "zID" ):
+    if not getInfo( zID, "zID" ) or not getInfo( initiator, "zID" ):    # Reject invalid notifications
         return
-    # emailNotif1 = getInfo( zID, "emailReq1" )   # Check if this user wants to be emailed friend requests.
+
     emailNotif2 = getInfo( zID, "emailReq2" )   # Check if this user wants to be emailed for mentions
 
     if nType == 0:
@@ -1018,7 +1020,7 @@ def notify( zID, initiator, nType, URL ):
         msg = "@{} has mentioned you in a post/comment/reply.".format( initiator )
 
     if nType == 4 and emailNotif2 == 1:
-        sendEmail( getInfo( zID, "email" ), "MateLook - Notification", "<br>" + msg )
+        sendEmail( getInfo( zID, "email" ), "MateLook - Notification", "<br><a href='%s'".format( URL ) + msg + "</a>" )
 
     cDate = datetime.datetime.now( )
     con = sql.connect( db )
@@ -1027,12 +1029,6 @@ def notify( zID, initiator, nType, URL ):
     con.commit( )
     con.close( )
 
-""" sanitise( zID )
-    zID     - zID to be sanitised
-"""
-def sanitise( zID ):
-    zRe = re.compile( r'z[0-9]{7}' )
-    return zRe.match( zID )
 """
     doMention converts a message string into HTML Markup.
     (\n => <br>)
@@ -1077,9 +1073,6 @@ def main( ):
     app.jinja_env.globals.update( isMate=isMate )
 
     app.jinja_env.filters['doMention'] = doMention
-
-    # logger = logging.getLogger( __name__ )
-    # logging.basicConfig( filename='hello.log', level=logging.DEBUG)
 
     logger = logging.getLogger( __name__ )
     logging.basicConfig( filename='out.log', level=logging.INFO )
