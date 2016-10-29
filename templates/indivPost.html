@@ -1,0 +1,90 @@
+{% include 'header.html' %}
+<body>
+    {% set sessName = getSess( ) %}
+    <section class="page-header">
+        <div class="ui fluid container">
+            <div class="ui grey secondary menu">
+                {% if sessName %}
+                <a href="{{ url_for( 'viewUsers', user_name=sessName ) }}" class="item active">{{ getInfo( sessName, 'full_name') }}</a>
+                <a href="{{ url_for( 'mateSuggest' ) }}" class="item">Mate Suggestions</a>
+                <div class="ui dropdown item">
+                    Notifications
+                    <i class="dropdown icon"></i>
+                    <div class="menu note-drop">
+                        {% for note in nInfo %}
+                        {% set rowInfo = dictFromRow( note ) %}
+                        <div class="ui feed">
+                            <div class="event">
+                                <div class="label">
+                                    <img class="small-picture" src="{{ url_for( 'showProfPict', zID=rowInfo.initiator ) }}">
+                                </div>
+                                <div class="content">
+                                    <div class="date">{{ rowInfo.time|truncate( 16, True, '' ) }}</div>
+                                    <div class="summary">{{ rowInfo.msg|doMention }}</div>
+                                    <div class="meta">
+                                        <a href="{{ rowInfo.URL }}">Context</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <a class="item">Hide</a>
+                    </div>
+                </div>
+                <div class="right menu">
+                    <a href="{{ url_for( 'logout' ) }}" class="ui item">Logout</a>
+                </div>
+                {% else %}
+                <a href="{{ url_for( 'auth' ) }}" class="item active">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <div class="ui text container">
+        <section class="individual-post">
+            <div class="ui text container hidden--force">
+                <div class="ui cards">
+                    <div class="ui raised fluid card create-post">
+                        <div class="content">
+                            <h1 class="post-header">Make Post</h1>
+                            <div class="description">
+                                <div class="actions">
+                                    <textarea class="post-area" placeholder="What do your mates want to hear?"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="extra-content">
+                            <div class="actions">
+                                <button class="ui button green action-create" data-type="Post" data-parent="{{ username }}">Create</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% include 'post.html' %}
+        </section>
+    </div>
+    <script>
+    $( document ).on( 'click', '.reply', function( ) {
+        var me = $( this );
+        $( '.create-post' ).insertAfter( this ).hide( ).show( 'slow' );
+        $( '.action-create' ).data( "type", me.data( "type" ) ).data( "parent", me.data( "parent" ) );
+        $( '.post-header' ).text( "Respond as " + me.data( "type" ) );
+    } );
+
+    $( document ).on( 'dblclick', '.delete', function( ) {
+        $.post(
+            '{{ url_for( "delete" ) }}', {
+                zID: '{{ sessName }}',
+                parent: $( this ).data( "parent" ),
+                type: $( this ).data( "type" ) },
+        function( data ) {
+            alert( data );
+            location.reload( );
+        } );
+    } );
+
+    $('.ui.dropdown').dropdown( );
+    </script>
+</body>

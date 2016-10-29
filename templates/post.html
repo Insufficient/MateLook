@@ -42,7 +42,6 @@
                     <div class="actions">
                         <a class="reply" data-type="Reply" data-parent="{{ rowInfo.pID }}">Reply</a>
                         {% if row_Info.zID == getSess( ) %}
-                        <a class="edit" data-parent="{{ row_Info.cID }}">Edit</a>
                         <a class="delete" data-type="Comment" data-parent="{{ row_Info.cID }}" data-tooltip="Double-Click">Delete</a>
                         {% endif %}
                     </div>
@@ -64,7 +63,6 @@
                             <div class="text">{{ rowInfo_.message|doMention|safe|urlize( 40, True ) }}</div>
                             <div class="actions">
                                 {% if rowInfo_.zID == getSess( ) %}
-                                <a class="edit" data-parent="{{ rowInfo_.rID }}">Edit</a>
                                 <a class="delete" data-type="Reply" data-parent="{{ rowInfo_.rID }}" data-tooltip="Double-Click">Delete</a>
                                 {% endif %}
                             </div>

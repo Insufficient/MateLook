@@ -173,6 +173,11 @@ body {
     margin-top: 15px;
 }
 
+.individual-post {
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+
 .small-picture {
     width: 80px;
     height: 80px;
