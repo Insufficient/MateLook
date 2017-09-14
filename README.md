@@ -17,3 +17,6 @@ This is a "toy" social networking website created with Flask for COMP2041 Assign
 * Privacy - Users can set privacy settings to prevent other users viewing their profile or messages.
 * Mate - Users can send *mate* requests to other users.
 * Search - Users can search for posts, replies or users.
+
+![Preview Screenshot 1](screenshot_1.png?raw=true "Screenshot 1")
+![Preview Screenshot 2](screenshot_2.png?raw=true "Screenshot 2")
