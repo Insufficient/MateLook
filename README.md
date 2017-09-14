@@ -18,5 +18,9 @@ This is a "toy" social networking website created with Flask for COMP2041 Assign
 * Mate - Users can send *mate* requests to other users.
 * Search - Users can search for posts, replies or users.
 
+## Screenshots
 ![Preview Screenshot 1](screenshot_1.png?raw=true "Screenshot 1")
+
+-
+
 ![Preview Screenshot 2](screenshot_2.png?raw=true "Screenshot 2")
