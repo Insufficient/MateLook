@@ -662,8 +662,10 @@ def auth( ):
             result = cur.fetchone( )
             if not result:
                 try:
-                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", ( \
-                    formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0, 0, 0, 0, 0 ) )
+                    # cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", ( \
+                    # formzID, formName, formEmail, formPass, None, None, None, None, 0, 0, 0, 0, 0, 0, 0, 0 ) )
+                    cur.execute( "INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?)", ( \
+                    ( formzID, formName, formEmail, formPass, None, None, None, 0 ) ) )
                     con.commit( )
                     flash( "An email has been sent to %s. Please click on the link to verify your account." % formEmail )
                     msg = """ Hello {},<br>
@@ -1245,4 +1247,4 @@ def parseDataset( ):
 main( )
 
 if __name__ == "__main__":
-    app.run( debug=True, port=5000, host="0.0.0.0") #, threaded=True) # 0.0.0.0
+    app.run( debug=True, port=5000, host="0.0.0.0", threaded=True) # 0.0.0.0
